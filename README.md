@@ -188,7 +188,7 @@ This project is intended to use the **MIT License** if an MIT `LICENSE` file is 
 **Muhammad Ali**
 
 - GitHub: [@Alimemonnn](https://github.com/Alimemonnn)
-- LinkedIn: [Muhammad Ali](https://linkedin.com/in/muhammad-ali-ai)
+- LinkedIn: [@Alimemonn]([https://linkedin.com/in/muhammad-ali-ai](https://www.linkedin.com/in/alimemonn/?isSelfProfile=true))
 
 ---
 
