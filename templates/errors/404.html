@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Page not found{% endblock %}
+{% block content %}
+<section class="section"><div class="container empty-state">
+  <i class="fa-solid fa-signs-post"></i>
+  <h1>Page not found</h1>
+  <p>The page you asked for does not exist or has been removed.</p>
+  <a class="btn btn-blood" href="{{ url_for('public.index') }}">Back to home</a>
+</div></section>
+{% endblock %}

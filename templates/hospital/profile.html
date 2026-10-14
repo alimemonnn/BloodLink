@@ -1,0 +1,60 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'profile' %}
+{% block title %}Hospital profile{% endblock %}
+{% block dash_title %}Hospital profile{% endblock %}
+{% block dash_subtitle %}Patients choose your hospital from this information{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  <h5>Hospital details</h5>
+  <form method="post" novalidate>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="hospital_name">Hospital name</label>
+        <input class="form-control" id="hospital_name" name="hospital_name" value="{{ hospital.hospital_name }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-control" id="email" value="{{ hospital.email }}" disabled>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="phone">Phone number</label>
+        <input class="form-control" id="phone" name="phone" value="{{ hospital.phone }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="city">City</label>
+        <input class="form-control" id="city" name="city" value="{{ hospital.city }}" required>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="address">Address</label>
+        <input class="form-control" id="address" name="address" value="{{ hospital.address or '' }}" required>
+      </div>
+    </div>
+    <button class="btn btn-blood mt-4" type="submit">Save changes</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h5>Change password</h5>
+  <form method="post" action="{{ url_for('hospital.change_password') }}" data-match-passwords>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label" for="current_password">Current password</label>
+        <input class="form-control" id="current_password" name="current_password" type="password" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="new_password">New password</label>
+        <input class="form-control" id="new_password" name="new_password" type="password" required minlength="8">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="confirm_password">Confirm new password</label>
+        <input class="form-control" id="confirm_password" name="confirm_password" type="password" required minlength="8">
+      </div>
+    </div>
+    <button class="btn btn-outline-navy mt-3" type="submit">Change password</button>
+  </form>
+</div>
+{% endblock %}

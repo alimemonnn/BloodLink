@@ -1,0 +1,70 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import pagination %}
+{% set active = 'requests' %}
+{% block title %}Manage blood requests{% endblock %}
+{% block dash_title %}Blood requests{% endblock %}
+{% block dash_subtitle %}Monitor hospital approvals and close or remove requests{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<form class="panel mb-4" method="get">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label" for="status">Status</label>
+      <select class="form-select" id="status" name="status">
+        <option value="">Any</option>
+        {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if filters.status == s }}>{{ s }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label" for="blood_group">Blood group</label>
+      <select class="form-select" id="blood_group" name="blood_group">
+        <option value="">Any</option>
+        {% for g in blood_groups %}<option value="{{ g }}" {{ 'selected' if filters.blood_group == g }}>{{ g }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label" for="urgency">Urgency</label>
+      <select class="form-select" id="urgency" name="urgency">
+        <option value="">Any</option>
+        {% for u in ['Normal', 'Urgent', 'Critical'] %}<option value="{{ u }}" {{ 'selected' if filters.urgency == u }}>{{ u }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="city">City</label>
+      <input class="form-control" id="city" name="city" value="{{ filters.city }}">
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button class="btn btn-blood w-100" type="submit">Filter</button>
+      <a class="btn btn-outline-navy" href="{{ url_for('admin.requests_list') }}">Reset</a>
+    </div>
+  </div>
+</form>
+
+<div class="panel">
+  {% if requests.items %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Request</th><th>Group</th><th>Hospital</th><th>Urgency</th><th>Status</th><th>Verified</th><th>Responses</th><th></th></tr></thead>
+      <tbody>
+      {% for r in requests.items %}
+      <tr>
+        <td><strong>#{{ r.id }} {{ r.patient_name }}</strong><div class="small text-muted">{{ r.location }} &middot; {{ r.created_at.strftime('%d %b %Y') }}</div></td>
+        <td><span class="blood-chip sm">{{ r.blood_group_required }}</span></td>
+        <td>{{ r.hospital.hospital_name }}</td>
+        <td><span class="badge bg-{{ r.urgency_color }}">{{ r.urgency }}</span></td>
+        <td><span class="badge bg-{{ r.status_color }}">{{ r.status }}</span></td>
+        <td>{{ 'Yes' if r.hospital_verified else 'No' }}</td>
+        <td>{{ r.response_count }}</td>
+        <td><a class="btn btn-sm btn-outline-navy" href="{{ url_for('admin.request_detail', request_id=r.id) }}">Open</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pagination(requests, 'admin.requests_list', filters) }}
+  {% else %}
+  <div class="empty-state"><i class="fa-regular fa-folder-open"></i><p class="mb-0">No requests match these filters.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

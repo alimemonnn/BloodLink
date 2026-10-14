@@ -1,0 +1,89 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'donors' %}
+{% block title %}Edit donor{% endblock %}
+{% block dash_title %}{{ donor.name }}{% endblock %}
+{% block dash_subtitle %}Donor since {{ donor.created_at.strftime('%d %b %Y') }} &middot; {{ donor.email }}{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  <h5>Donor details</h5>
+  <form method="post" novalidate>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="name">Full name</label>
+        <input class="form-control" id="name" name="name" value="{{ donor.name }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="phone">Phone</label>
+        <input class="form-control" id="phone" name="phone" value="{{ donor.phone }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="blood_group">Blood group</label>
+        <select class="form-select" id="blood_group" name="blood_group">
+          {% for g in blood_groups %}<option value="{{ g }}" {{ 'selected' if donor.blood_group == g }}>{{ g }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="city">City</label>
+        <input class="form-control" id="city" name="city" value="{{ donor.city }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="area">Area</label>
+        <input class="form-control" id="area" name="area" value="{{ donor.area or '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="last_donation_date">Last donation date</label>
+        <input class="form-control" id="last_donation_date" name="last_donation_date" type="date"
+               value="{{ donor.last_donation_date.strftime('%Y-%m-%d') if donor.last_donation_date else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="availability">Availability</label>
+        <select class="form-select" id="availability" name="availability">
+          <option value="Available" {{ 'selected' if donor.availability == 'Available' }}>Available</option>
+          <option value="Not Available" {{ 'selected' if donor.availability == 'Not Available' }}>Not available</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-blood mt-4" type="submit">Save changes</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h5>Donation responses ({{ donor.responses|length }})</h5>
+  {% if donor.responses %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Request</th><th>Group</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+      {% for resp in donor.responses %}
+      <tr>
+        <td>#{{ resp.request.id }} &middot; {{ resp.request.patient_name }}</td>
+        <td><span class="blood-chip sm">{{ resp.request.blood_group_required }}</span></td>
+        <td><span class="badge bg-{{ resp.status_color }}">{{ resp.response_status }}</span></td>
+        <td>{{ resp.response_date.strftime('%d %b %Y') }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="text-muted mb-0">This donor has not responded to any request yet.</p>{% endif %}
+</div>
+
+<div class="panel">
+  <h5>Account actions</h5>
+  <div class="d-flex gap-2 flex-wrap">
+    <form method="post" action="{{ url_for('admin.toggle_donor', donor_id=donor.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-navy" type="submit">{{ 'Deactivate account' if donor.is_active else 'Activate account' }}</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.delete_donor', donor_id=donor.id) }}"
+          data-confirm="Delete this donor and all of their responses? This cannot be undone.">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-danger" type="submit">Delete donor</button>
+    </form>
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin.donors') }}">Back to donors</a>
+  </div>
+</div>
+{% endblock %}

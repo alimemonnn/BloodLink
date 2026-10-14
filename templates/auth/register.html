@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-title text-center">
+      <h1>Create your BloodLink account</h1>
+      <p class="mx-auto">Pick the role that fits you. Every role gets its own dashboard.</p>
+    </div>
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-4">
+        <a class="role-card" href="{{ url_for('auth.register_donor') }}">
+          <i class="fa-solid fa-hand-holding-droplet"></i>
+          <h5>I want to donate blood</h5>
+          <p class="mb-0 text-muted">Set your availability and get notified when someone nearby needs your blood group.</p>
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a class="role-card" href="{{ url_for('auth.register_patient') }}">
+          <i class="fa-solid fa-user-injured"></i>
+          <h5>I need blood</h5>
+          <p class="mb-0 text-muted">Register as a patient or family member and post a request for the hospital to verify.</p>
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a class="role-card" href="{{ url_for('auth.register_hospital') }}">
+          <i class="fa-solid fa-hospital"></i>
+          <h5>I represent a hospital</h5>
+          <p class="mb-0 text-muted">Verify patient requests and reach donors. An admin approves new hospitals.</p>
+        </a>
+      </div>
+    </div>
+    <p class="text-center mt-4 mb-0">Already registered? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import donor_row %}
+{% set active = 'requests' %}
+{% block title %}Review request #{{ blood_request.id }}{% endblock %}
+{% block dash_title %}Request #{{ blood_request.id }} &middot; {{ blood_request.blood_group_required }}{% endblock %}
+{% block dash_subtitle %}Posted by {{ blood_request.patient.name }} on {{ blood_request.created_at.strftime('%d %b %Y') }}{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  <div class="d-flex gap-2 flex-wrap mb-3">
+    <span class="badge bg-{{ blood_request.status_color }} fs-6">{{ blood_request.status }}</span>
+    <span class="badge bg-{{ blood_request.urgency_color }} fs-6">{{ blood_request.urgency }}</span>
+    <span class="badge bg-{{ 'success' if blood_request.hospital_verified else 'secondary' }} fs-6">
+      {{ 'Verified' if blood_request.hospital_verified else 'Not verified' }}</span>
+  </div>
+  <div class="row g-3">
+    <div class="col-md-6"><strong>Patient name:</strong> {{ blood_request.patient_name }}</div>
+    <div class="col-md-6"><strong>Account holder:</strong> {{ blood_request.patient.name }} ({{ blood_request.patient.email }})</div>
+    <div class="col-md-6"><strong>Blood group required:</strong> {{ blood_request.blood_group_required }}</div>
+    <div class="col-md-6"><strong>Units required:</strong> {{ blood_request.units_required }}</div>
+    <div class="col-md-6"><strong>Patient contact:</strong> {{ blood_request.contact_number }}</div>
+    <div class="col-md-6"><strong>Location:</strong> {{ blood_request.location }}</div>
+    {% if blood_request.description %}<div class="col-12"><strong>Message:</strong> {{ blood_request.description }}</div>{% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <h5>Verification decision</h5>
+  {% if blood_request.status == 'Pending Hospital Approval' %}
+  <p class="text-muted">Approving publishes this request to compatible donors and sends them a notification. Rejecting keeps it hidden.</p>
+  <form method="post" action="{{ url_for('hospital.approve', request_id=blood_request.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="mb-3">
+      <label class="form-label" for="hospital_notes">Verification notes (optional)</label>
+      <textarea class="form-control" id="hospital_notes" name="hospital_notes" rows="2"
+                placeholder="Ward, admitting doctor, or anything donors should know">{{ blood_request.hospital_notes or '' }}</textarea>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-blood" type="submit"><i class="fa-solid fa-check"></i> Approve request</button>
+      <button class="btn btn-outline-danger" type="submit"
+              formaction="{{ url_for('hospital.reject', request_id=blood_request.id) }}">Reject request</button>
+    </div>
+  </form>
+  {% else %}
+  <p class="mb-3">This request has already been reviewed. Current status: <strong>{{ blood_request.status }}</strong>.</p>
+  {% if blood_request.hospital_notes %}<div class="alert alert-info">{{ blood_request.hospital_notes }}</div>{% endif %}
+  <div class="d-flex gap-2 flex-wrap">
+    <form method="post" action="{{ url_for('hospital.verify', request_id=blood_request.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-navy" type="submit">
+        Mark as {{ 'not verified' if blood_request.hospital_verified else 'verified' }}
+      </button>
+    </form>
+    {% if blood_request.status == 'Approved' %}
+    <form method="post" action="{{ url_for('hospital.fulfill', request_id=blood_request.id) }}"
+          data-confirm="Mark this request as fulfilled? Donors will stop seeing it.">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-success" type="submit">Mark as fulfilled</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h5>Donor responses ({{ blood_request.responses|length }})</h5>
+  {% if blood_request.responses %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Donor</th><th>Group</th><th>City</th><th>Contact</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for resp in blood_request.responses %}
+      <tr>
+        <td><strong>{{ resp.donor.name }}</strong></td>
+        <td><span class="blood-chip sm">{{ resp.donor.blood_group }}</span></td>
+        <td>{{ resp.donor.city }}</td>
+        <td class="text-nowrap">{{ resp.donor.phone }}<div class="small text-muted">{{ resp.donor.email }}</div></td>
+        <td><span class="badge bg-{{ resp.status_color }}">{{ resp.response_status }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted mb-0">No responses yet.</p>
+  {% endif %}
+</div>
+
+{% if matches %}
+<div class="panel">
+  <h5>Matching donors ({{ matches|length }})</h5>
+  <p class="text-muted">Available, eligible donors whose blood is compatible with {{ blood_request.blood_group_required }}. Donors in {{ blood_request.location }} are listed first.</p>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Donor</th><th>Group</th><th>City</th><th>Availability</th><th>Eligibility</th><th>Contact</th></tr></thead>
+      <tbody>{% for d in matches %}{{ donor_row(d, show_contact=True) }}{% endfor %}</tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

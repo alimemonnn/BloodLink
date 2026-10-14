@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import request_card, pagination %}
+{% block title %}Emergency requests{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-title">
+      <h1>Emergency blood requests</h1>
+      <p>Every request here has been verified by the hospital named on it. Log in as a donor to respond.</p>
+    </div>
+
+    <form class="panel mb-4" method="get">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label" for="blood_group">Blood group</label>
+          <select class="form-select" id="blood_group" name="blood_group">
+            <option value="">Any group</option>
+            {% for g in blood_groups %}<option value="{{ g }}" {{ 'selected' if filters.blood_group == g }}>{{ g }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="city">City or hospital area</label>
+          <input class="form-control" id="city" name="city" value="{{ filters.city }}" placeholder="e.g. Sukkur">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="urgency">Urgency</label>
+          <select class="form-select" id="urgency" name="urgency">
+            <option value="">Any</option>
+            {% for u in ['Normal', 'Urgent', 'Critical'] %}<option value="{{ u }}" {{ 'selected' if filters.urgency == u }}>{{ u }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button class="btn btn-blood w-100" type="submit">Filter</button>
+          <a class="btn btn-outline-navy" href="{{ url_for('public.emergency') }}">Reset</a>
+        </div>
+      </div>
+    </form>
+
+    {% if requests.items %}
+    <div class="row g-4">
+      {% for r in requests.items %}{{ request_card(r) }}{% endfor %}
+    </div>
+    {{ pagination(requests, 'public.emergency', filters) }}
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-regular fa-circle-check"></i>
+      <p class="mb-0">No approved requests match these filters right now.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

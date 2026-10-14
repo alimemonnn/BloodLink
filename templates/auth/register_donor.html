@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Donor registration{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="auth-wrap" style="max-width: 720px;">
+    <div class="auth-card">
+      <h1>Register as a donor</h1>
+      <p class="text-muted">You can change your availability at any time from your dashboard.</p>
+      <form method="post" novalidate data-match-passwords>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="name">Full name</label>
+            <input class="form-control" id="name" name="name" value="{{ form.get('name', '') }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="email">Email</label>
+            <input class="form-control" id="email" name="email" type="email" value="{{ form.get('email', '') }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="phone">Phone number</label>
+            <input class="form-control" id="phone" name="phone" value="{{ form.get('phone', '') }}" placeholder="03001234567" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="blood_group">Blood group</label>
+            <select class="form-select" id="blood_group" name="blood_group" required>
+              <option value="">Select</option>
+              {% for g in blood_groups %}<option value="{{ g }}" {{ 'selected' if form.get('blood_group') == g }}>{{ g }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="city">City</label>
+            <input class="form-control" id="city" name="city" value="{{ form.get('city', '') }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="area">Area</label>
+            <input class="form-control" id="area" name="area" value="{{ form.get('area', '') }}" placeholder="Neighbourhood or town">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="last_donation_date">Last donation date</label>
+            <input class="form-control" id="last_donation_date" name="last_donation_date" type="date" value="{{ form.get('last_donation_date', '') }}">
+            <div class="form-text">Leave empty if you have never donated. Eligibility returns three months after your last donation.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="availability">Availability</label>
+            <select class="form-select" id="availability" name="availability">
+              <option value="Available" {{ 'selected' if form.get('availability') != 'Not Available' }}>Available</option>
+              <option value="Not Available" {{ 'selected' if form.get('availability') == 'Not Available' }}>Not available</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="password">Password</label>
+            <input class="form-control" id="password" name="password" type="password" required minlength="8">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="confirm_password">Confirm password</label>
+            <input class="form-control" id="confirm_password" name="confirm_password" type="password" required minlength="8">
+          </div>
+        </div>
+        <button class="btn btn-blood w-100 mt-4" type="submit">Create donor account</button>
+      </form>
+      <p class="mt-3 mb-0 text-center">Already registered? <a href="{{ url_for('auth.login', role='donor') }}">Log in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

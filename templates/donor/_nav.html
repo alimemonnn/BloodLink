@@ -1,0 +1,5 @@
+<a href="{{ url_for('donor.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+<a href="{{ url_for('donor.requests_feed') }}" class="{{ 'active' if active == 'requests' }}"><i class="fa-solid fa-droplet"></i> Blood requests</a>
+<a href="{{ url_for('donor.history') }}" class="{{ 'active' if active == 'history' }}"><i class="fa-solid fa-clock-rotate-left"></i> My responses</a>
+<a href="{{ url_for('donor.notifications') }}" class="{{ 'active' if active == 'notifications' }}"><i class="fa-regular fa-bell"></i> Notifications</a>
+<a href="{{ url_for('donor.profile') }}" class="{{ 'active' if active == 'profile' }}"><i class="fa-regular fa-user"></i> My profile</a>

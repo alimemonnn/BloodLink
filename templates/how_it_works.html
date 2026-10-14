@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}How it works{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <h1>How BloodLink works</h1>
+    <p class="lead">From registration to a completed donation, here is the full path a request takes.</p>
+
+    <div class="row g-4 mt-2">
+      <div class="col-md-6 col-lg-3"><div class="step-card"><div class="step-no">1</div><h5>Register</h5><p class="mb-0">Donors add their blood group, city and last donation date. Patients add contact details. Hospitals register and wait for admin verification.</p></div></div>
+      <div class="col-md-6 col-lg-3"><div class="step-card"><div class="step-no">2</div><h5>Post a request</h5><p class="mb-0">A patient names the hospital, blood group, units needed, urgency and a contact number. The request starts as "Pending Hospital Approval".</p></div></div>
+      <div class="col-md-6 col-lg-3"><div class="step-card"><div class="step-no">3</div><h5>Hospital verifies</h5><p class="mb-0">The hospital sees the request in its dashboard and approves or rejects it, adding verification notes where useful.</p></div></div>
+      <div class="col-md-6 col-lg-3"><div class="step-card"><div class="step-no">4</div><h5>Donors connect</h5><p class="mb-0">Compatible, available donors are notified and can respond. Once blood is arranged, the request is marked fulfilled.</p></div></div>
+    </div>
+
+    <div class="panel mt-5">
+      <h4>Request lifecycle</h4>
+      <p>Each status tells everyone involved exactly where the request stands.</p>
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Status</th><th>Set by</th><th>Visible to donors</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-warning text-dark">Pending Hospital Approval</span></td><td>System, on submission</td><td>No</td><td>Waiting for the hospital to confirm the need.</td></tr>
+            <tr><td><span class="badge bg-primary">Approved</span></td><td>Hospital</td><td>Yes</td><td>Verified and open for donor responses.</td></tr>
+            <tr><td><span class="badge bg-secondary">Rejected</span></td><td>Hospital</td><td>No</td><td>The hospital could not confirm the request.</td></tr>
+            <tr><td><span class="badge bg-success">Fulfilled</span></td><td>Hospital or patient</td><td>No</td><td>Blood has been arranged.</td></tr>
+            <tr><td><span class="badge bg-dark">Expired</span></td><td>System, after 14 days</td><td>No</td><td>The request was not closed in time and was retired automatically.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>Who can donate to whom</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered text-center align-middle">
+          <thead><tr><th>Donor group</th><th>Can donate to</th></tr></thead>
+          <tbody>
+            <tr><td><span class="blood-chip sm">O-</span></td><td>Every blood group (universal donor)</td></tr>
+            <tr><td><span class="blood-chip sm">O+</span></td><td>O+, A+, B+, AB+</td></tr>
+            <tr><td><span class="blood-chip sm">A-</span></td><td>A&minus;, A+, AB&minus;, AB+</td></tr>
+            <tr><td><span class="blood-chip sm">A+</span></td><td>A+, AB+</td></tr>
+            <tr><td><span class="blood-chip sm">B-</span></td><td>B&minus;, B+, AB&minus;, AB+</td></tr>
+            <tr><td><span class="blood-chip sm">B+</span></td><td>B+, AB+</td></tr>
+            <tr><td><span class="blood-chip sm">AB-</span></td><td>AB&minus;, AB+</td></tr>
+            <tr><td><span class="blood-chip sm">AB+</span></td><td>AB+ only</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small mb-0 text-muted">Donors must also wait at least three months after their previous donation before BloodLink lists them as eligible.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

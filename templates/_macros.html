@@ -1,0 +1,63 @@
+{# Reusable UI pieces shared by every dashboard. #}
+
+{% macro stat_card(label, value, icon, color='danger') %}
+<div class="col-6 col-lg-3">
+  <div class="stat-card border-{{ color }}">
+    <div class="stat-icon text-{{ color }}"><i class="fa-solid {{ icon }}"></i></div>
+    <div>
+      <div class="stat-value">{{ value }}</div>
+      <div class="stat-label">{{ label }}</div>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro request_card(r, show_contact=False) %}
+<div class="col-md-6 col-xl-4">
+  <article class="request-card urgency-{{ r.urgency|lower }}">
+    <header>
+      <span class="blood-chip">{{ r.blood_group_required }}</span>
+      <span class="badge bg-{{ r.urgency_color }}">{{ r.urgency }}</span>
+    </header>
+    <h5>{{ r.patient_name }}</h5>
+    <ul class="request-meta">
+      <li><i class="fa-solid fa-hospital"></i> {{ r.hospital.hospital_name }}</li>
+      <li><i class="fa-solid fa-location-dot"></i> {{ r.location }}</li>
+      <li><i class="fa-solid fa-flask"></i> {{ r.units_required }} unit(s) needed</li>
+      <li><i class="fa-regular fa-clock"></i> Posted {{ r.created_at.strftime('%d %b %Y') }}</li>
+      {% if show_contact %}<li><i class="fa-solid fa-phone"></i> {{ r.contact_number }}</li>{% endif %}
+    </ul>
+    {% if r.description %}<p class="request-note">{{ r.description }}</p>{% endif %}
+    {% if caller is defined %}{% endif %}
+  </article>
+</div>
+{% endmacro %}
+
+{% macro donor_row(d, show_contact=False) %}
+<tr>
+  <td>
+    <strong>{{ d.name }}</strong>
+    {% if d.area %}<div class="text-muted small">{{ d.area }}</div>{% endif %}
+  </td>
+  <td><span class="blood-chip sm">{{ d.blood_group }}</span></td>
+  <td>{{ d.city }}</td>
+  <td><span class="badge bg-{{ 'success' if d.availability == 'Available' else 'secondary' }}">{{ d.availability }}</span></td>
+  <td>
+    {% if d.is_eligible %}<span class="badge bg-success">Eligible</span>
+    {% else %}<span class="badge bg-warning text-dark">In {{ d.days_until_eligible }} days</span>{% endif %}
+  </td>
+  {% if show_contact %}<td class="text-nowrap">{{ d.phone }}<div class="small text-muted">{{ d.email }}</div></td>{% endif %}
+</tr>
+{% endmacro %}
+
+{% macro pagination(items, endpoint, args={}) %}
+{% if items.pages and items.pages > 1 %}
+<nav class="mt-4"><ul class="pagination justify-content-center">
+  {% for p in range(1, items.pages + 1) %}
+  <li class="page-item {{ 'active' if p == items.page }}">
+    <a class="page-link" href="{{ url_for(endpoint, page=p, **args) }}">{{ p }}</a>
+  </li>
+  {% endfor %}
+</ul></nav>
+{% endif %}
+{% endmacro %}

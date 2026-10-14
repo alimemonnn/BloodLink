@@ -1,0 +1,4 @@
+<a href="{{ url_for('hospital.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+<a href="{{ url_for('hospital.requests_list') }}" class="{{ 'active' if active == 'requests' }}"><i class="fa-solid fa-clipboard-check"></i> Blood requests</a>
+<a href="{{ url_for('hospital.requests_list', status='Pending Hospital Approval') }}" class="{{ 'active' if active == 'pending' }}"><i class="fa-solid fa-hourglass-half"></i> Awaiting approval</a>
+<a href="{{ url_for('hospital.profile') }}" class="{{ 'active' if active == 'profile' }}"><i class="fa-regular fa-building"></i> Hospital profile</a>

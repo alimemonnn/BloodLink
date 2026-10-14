@@ -1,0 +1,4 @@
+<a href="{{ url_for('patient.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+<a href="{{ url_for('patient.new_request') }}" class="{{ 'active' if active == 'new' }}"><i class="fa-solid fa-plus"></i> Post a request</a>
+<a href="{{ url_for('patient.requests_list') }}" class="{{ 'active' if active == 'requests' }}"><i class="fa-solid fa-list"></i> My requests</a>
+<a href="{{ url_for('patient.profile') }}" class="{{ 'active' if active == 'profile' }}"><i class="fa-regular fa-user"></i> My profile</a>

@@ -1,0 +1,7 @@
+<a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+<a href="{{ url_for('admin.users') }}" class="{{ 'active' if active == 'users' }}"><i class="fa-solid fa-users"></i> All users</a>
+<a href="{{ url_for('admin.donors') }}" class="{{ 'active' if active == 'donors' }}"><i class="fa-solid fa-hand-holding-droplet"></i> Donors</a>
+<a href="{{ url_for('admin.patients') }}" class="{{ 'active' if active == 'patients' }}"><i class="fa-solid fa-user-injured"></i> Patients</a>
+<a href="{{ url_for('admin.hospitals') }}" class="{{ 'active' if active == 'hospitals' }}"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+<a href="{{ url_for('admin.requests_list') }}" class="{{ 'active' if active == 'requests' }}"><i class="fa-solid fa-droplet"></i> Blood requests</a>
+<a href="{{ url_for('admin.analytics') }}" class="{{ 'active' if active == 'analytics' }}"><i class="fa-solid fa-chart-column"></i> Reports</a>

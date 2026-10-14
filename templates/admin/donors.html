@@ -1,0 +1,76 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import pagination %}
+{% set active = 'donors' %}
+{% block title %}Manage donors{% endblock %}
+{% block dash_title %}Donors{% endblock %}
+{% block dash_subtitle %}Search, edit, deactivate or remove donor accounts{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<form class="panel mb-4" method="get">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label" for="name">Name</label>
+      <input class="form-control" id="name" name="name" value="{{ filters.name }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label" for="blood_group">Blood group</label>
+      <select class="form-select" id="blood_group" name="blood_group">
+        <option value="">Any</option>
+        {% for g in blood_groups %}<option value="{{ g }}" {{ 'selected' if filters.blood_group == g }}>{{ g }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="city">City</label>
+      <input class="form-control" id="city" name="city" value="{{ filters.city }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label" for="availability">Availability</label>
+      <select class="form-select" id="availability" name="availability">
+        <option value="">Any</option>
+        <option value="Available" {{ 'selected' if filters.availability == 'Available' }}>Available</option>
+        <option value="Not Available" {{ 'selected' if filters.availability == 'Not Available' }}>Not available</option>
+      </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button class="btn btn-blood w-100" type="submit">Search</button>
+      <a class="btn btn-outline-navy" href="{{ url_for('admin.donors') }}">Reset</a>
+    </div>
+  </div>
+</form>
+
+<div class="panel">
+  {% if donors.items %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Donor</th><th>Group</th><th>City</th><th>Contact</th><th>Availability</th><th>Account</th><th></th></tr></thead>
+      <tbody>
+      {% for d in donors.items %}
+      <tr>
+        <td><strong>{{ d.name }}</strong><div class="small text-muted">{{ d.email }}</div></td>
+        <td><span class="blood-chip sm">{{ d.blood_group }}</span></td>
+        <td>{{ d.city }}{% if d.area %}<div class="small text-muted">{{ d.area }}</div>{% endif %}</td>
+        <td class="text-nowrap">{{ d.phone }}</td>
+        <td>
+          <span class="badge bg-{{ 'success' if d.availability == 'Available' else 'secondary' }}">{{ d.availability }}</span>
+          <div class="small text-muted">{{ 'Eligible' if d.is_eligible else 'Eligible in ' ~ d.days_until_eligible ~ ' days' }}</div>
+        </td>
+        <td><span class="badge bg-{{ 'success' if d.is_active else 'dark' }}">{{ 'Active' if d.is_active else 'Inactive' }}</span></td>
+        <td class="text-nowrap">
+          <a class="btn btn-sm btn-outline-navy" href="{{ url_for('admin.donor_detail', donor_id=d.id) }}">Edit</a>
+          <form class="d-inline" method="post" action="{{ url_for('admin.toggle_donor', donor_id=d.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-secondary" type="submit">{{ 'Deactivate' if d.is_active else 'Activate' }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pagination(donors, 'admin.donors', filters) }}
+  {% else %}
+  <div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i><p class="mb-0">No donors match this search.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

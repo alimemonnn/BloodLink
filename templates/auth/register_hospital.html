@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Hospital registration{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="auth-wrap" style="max-width: 640px;">
+    <div class="auth-card">
+      <h1>Register your hospital</h1>
+      <p class="text-muted">An administrator verifies each hospital before the account can log in.</p>
+      <form method="post" novalidate data-match-passwords>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label" for="hospital_name">Hospital name</label>
+            <input class="form-control" id="hospital_name" name="hospital_name" value="{{ form.get('hospital_name', '') }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="email">Hospital email</label>
+            <input class="form-control" id="email" name="email" type="email" value="{{ form.get('email', '') }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="phone">Phone number</label>
+            <input class="form-control" id="phone" name="phone" value="{{ form.get('phone', '') }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="city">City</label>
+            <input class="form-control" id="city" name="city" value="{{ form.get('city', '') }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="address">Address</label>
+            <input class="form-control" id="address" name="address" value="{{ form.get('address', '') }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="password">Password</label>
+            <input class="form-control" id="password" name="password" type="password" required minlength="8">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="confirm_password">Confirm password</label>
+            <input class="form-control" id="confirm_password" name="confirm_password" type="password" required minlength="8">
+          </div>
+        </div>
+        <button class="btn btn-blood w-100 mt-4" type="submit">Submit for verification</button>
+      </form>
+      <p class="mt-3 mb-0 text-center">Already verified? <a href="{{ url_for('auth.login', role='hospital') }}">Log in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% from "_macros.html" import request_card %}
+{% from "_ui.html" import ecg %}
+{% block title %}Find blood donors fast{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center gy-5">
+      <div class="col-lg-6">
+        <div class="hero-stage">
+          <span class="hero-status"><span class="pulse"></span>{{ available_now }} donor{{ '' if available_now == 1 else 's' }} ready to give blood right now</span>
+          <h1>Find a matching blood donor, fast.</h1>
+          <p class="lead mt-3">Choose the blood group you need. BloodLink shows every available, eligible donor who can safely give it, nearest first, and hospitals confirm each request is genuine.</p>
+          <div class="d-flex flex-wrap gap-2 mt-4">
+            <a href="{{ url_for('auth.register_donor') }}" class="btn btn-blood btn-lg">Register as a donor</a>
+            <a href="{{ url_for('auth.register_patient') }}" class="btn btn-light-outline btn-lg">Post a blood request</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 col-xl-5 ms-xl-auto">
+        <div class="picker">
+          <h2>Which blood group do you need?</h2>
+          <p class="sub">Tap one to see donors who can give it.</p>
+          <div class="type-grid">
+            {% for g in blood_groups %}
+            <a class="type-tile" href="{{ url_for('public.find_blood', blood_group=g) }}" aria-label="Find donors for {{ g }}">
+              <span class="t">{{ g }}</span>
+              <span class="n">{{ counts[g] }} available</span>
+            </a>
+            {% endfor %}
+          </div>
+          <p class="picker-foot"><i class="fa-solid fa-lock mt-1"></i><span>Donor details are shown to registered users only, which keeps donors safe from spam.</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{ ecg() }}
+</section>
+
+{% if requests %}
+<div class="ticker" aria-label="Open emergency requests">
+  <div class="ticker-inner">
+    <div class="ticker-label"><span class="live-dot" style="--x:0"></span> Open now</div>
+    <div class="ticker-track">
+      <div class="ticker-run">
+        {% for pass in range(2) %}{% for r in requests %}
+        <span class="ticker-item" {{ 'aria-hidden="true"' if pass == 1 }}><b>{{ r.blood_group_required }}</b> needed at {{ r.hospital.hospital_name }}
+          {% if r.urgency == 'Critical' %}<span class="crit">Critical</span>{% endif %}</span>
+        {% endfor %}{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<section class="pt-0">
+  <div class="container">
+    <div class="stat-strip reveal">
+      <a class="stat-link" href="{{ url_for('admin.donors') if current_role == 'admin' else url_for('public.find_blood', blood_group='all') }}">
+        <div class="num" data-count="{{ stats.donors }}">0</div><div class="lbl">Registered donors</div>
+      </a>
+      <a class="stat-link" href="{{ url_for('admin.requests_list') if current_role == 'admin' else url_for('public.emergency') }}">
+        <div class="num" data-count="{{ stats.active_requests }}">0</div><div class="lbl">Open requests</div>
+      </a>
+      <a class="stat-link" href="{{ url_for('admin.hospitals') if current_role == 'admin' else url_for('public.about') }}">
+        <div class="num" data-count="{{ stats.hospitals }}">0</div><div class="lbl">Partner hospitals</div>
+      </a>
+      <a class="stat-link" href="{{ url_for('admin.requests_list', status='Fulfilled') if current_role == 'admin' else url_for('public.emergency') }}">
+        <div class="num" data-count="{{ stats.donations }}">0</div><div class="lbl">Requests fulfilled</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-title reveal">
+      <h2>Who can give blood to whom?</h2>
+      <p>Blood is not one-size-fits-all. Choose the group a patient needs and see which donor groups are safe, so you never waste time on the wrong person.</p>
+    </div>
+    <div class="compat reveal" id="compat" data-map='{{ can_donate_to|tojson }}'>
+      <div class="row g-0">
+        <div class="col-lg-5">
+          <div class="compat-pick">
+            <h3>The patient needs</h3>
+            <div class="pill-grid">
+              {% for g in blood_groups %}<button type="button" class="pill {{ 'on' if g == 'A+' }}" data-need="{{ g }}">{{ g }}</button>{% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="compat-out">
+            <h3>A patient who needs <span data-out="need">A+</span> can receive from</h3>
+            <div class="giver-row">
+              {% for g in blood_groups %}<span class="giver" data-give="{{ g }}">{{ g }}</span>{% endfor %}
+            </div>
+            <a class="btn btn-blood" data-out="link" href="{{ url_for('public.find_blood', blood_group='A+') }}" data-base="{{ url_for('public.find_blood') }}">Find <span data-out="need">A+</span> donors</a>
+            <span class="small text-muted ms-2">Highlighted groups are compatible.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-grey">
+  <div class="container">
+    <div class="section-title reveal">
+      <h2>How BloodLink works</h2>
+      <p>Four steps stand between a patient and a donor who can help.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3 reveal" style="--d:.0s"><div class="step-card"><div class="step-no">1</div><h5>Register</h5><p class="mb-0">Sign up as a donor, a patient or a hospital. Donors add their blood group, city and last donation date.</p></div></div>
+      <div class="col-md-6 col-lg-3 reveal" style="--d:.08s"><div class="step-card"><div class="step-no">2</div><h5>Post or find blood</h5><p class="mb-0">Patients post a request with the hospital, blood group, units and urgency, or search donors directly.</p></div></div>
+      <div class="col-md-6 col-lg-3 reveal" style="--d:.16s"><div class="step-card"><div class="step-no">3</div><h5>Hospital verifies</h5><p class="mb-0">The hospital confirms the request is genuine. Only verified requests reach donors.</p></div></div>
+      <div class="col-md-6 col-lg-3 reveal" style="--d:.24s"><div class="step-card"><div class="step-no">4</div><h5>Donor responds</h5><p class="mb-0">Compatible donors nearby are notified and tap "I can donate". The hospital arranges the rest.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-title d-flex justify-content-between align-items-end flex-wrap gap-2 reveal">
+      <div>
+        <h2>Emergency blood requests</h2>
+        <p>Verified requests waiting for a donor right now.</p>
+      </div>
+      <a href="{{ url_for('public.emergency') }}" class="btn btn-outline-navy">See all requests</a>
+    </div>
+    {% if requests %}
+    <div class="row g-4">
+      {% for r in requests %}{{ request_card(r) }}{% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-regular fa-circle-check"></i>
+      <h3>No open requests right now</h3>
+      <p class="mb-0">That is good news. New verified requests appear here as soon as a hospital approves them.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="pb-0">
+  <div class="container">
+    <div class="cta-band reveal">
+      <h2>One donation can support up to three patients.</h2>
+      <p>Join the donor list and be reachable when someone in your city needs your blood group. You decide when you are available.</p>
+      <a href="{{ url_for('auth.register_donor') }}" class="btn btn-light btn-lg fw-bold text-danger">Become a donor</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
