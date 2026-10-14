@@ -1,0 +1,20 @@
+# Render Blueprint: "New +" -> "Blueprint" and point it at your GitHub repo.
+services:
+  - type: web
+    name: bloodlink
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --timeout 60
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL        # paste your Neon / Supabase connection string
+        sync: false
+      - key: ADMIN_EMAIL         # first admin login (created automatically)
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
