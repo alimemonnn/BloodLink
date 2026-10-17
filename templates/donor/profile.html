@@ -1,4 +1,5 @@
 {% extends "dashboard_base.html" %}
+{% from "account/_privacy_panel.html" import panel with context %}
 {% set active = 'profile' %}
 {% block title %}My profile{% endblock %}
 {% block dash_title %}My profile{% endblock %}
@@ -76,4 +77,5 @@
     <button class="btn btn-outline-navy mt-3" type="submit">Change password</button>
   </form>
 </div>
+{{ panel('donor') }}
 {% endblock %}

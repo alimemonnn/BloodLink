@@ -8,10 +8,10 @@
     <p>{% block dash_subtitle %}{% endblock %}</p>
   </div>
 </div>
-<section class="section">
+<section class="section {% block dash_class %}{% endblock %}">
   <div class="container">
     <div class="row g-4">
-      <div class="col-lg-3">
+      <div class="col-lg-3 side-nav-col">
         <nav class="side-nav">{% block sidenav %}{% endblock %}</nav>
       </div>
       <div class="col-lg-9">{% block dash_content %}{% endblock %}</div>

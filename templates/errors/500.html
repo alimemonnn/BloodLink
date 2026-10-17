@@ -2,7 +2,7 @@
 {% block title %}Something went wrong{% endblock %}
 {% block content %}
 <section class="section"><div class="container empty-state">
-  <i class="fa-solid fa-triangle-exclamation"></i>
+  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
   <h1>Something went wrong</h1>
   <p>The server could not complete that action. Try again, and tell the administrator if it keeps happening.</p>
   <a class="btn btn-blood" href="{{ url_for('public.index') }}">Back to home</a>

@@ -101,7 +101,8 @@ def main():
     f.get("/find-blood?blood_group=O%2B")
     r = f.post("/register/patient", data={
         "name": "New Person", "email": "new.person@example.com", "phone": "03005550000",
-        "city": "Sukkur", "password": "Secret123", "confirm_password": "Secret123"})
+        "city": "Sukkur", "password": "Secret123", "confirm_password": "Secret123",
+        "accept_terms": "on", "confirm_adult": "on"})
     check("New account lands on the donor list it asked for",
           r.status_code == 302 and "blood_group=O%2B" in r.headers["Location"])
 
@@ -141,9 +142,10 @@ def main():
         hid = Hospital.query.filter_by(is_verified=True).first().id
     payload = {"patient_name": "Spam", "blood_group_required": "O+", "hospital_id": hid,
                "location": "Sukkur", "contact_number": "03001234567", "urgency": "Normal", "units_required": "1"}
-    for _ in range(5):
-        p.post("/patient/requests/new", data=payload)
-    r = p.post("/patient/requests/new", data=payload, follow_redirects=True)
+    # (identical repeated posts are collapsed by the duplicate-submit guard, so vary the group)
+    for group in ("O+", "A+", "B+", "AB+", "O-"):
+        p.post("/patient/requests/new", data={**payload, "blood_group_required": group})
+    r = p.post("/patient/requests/new", data={**payload, "blood_group_required": "A-"}, follow_redirects=True)
     check("6th request within an hour is refused", b"posted several requests" in r.data)
 
     print("\n8. CSRF protection (enabled)")

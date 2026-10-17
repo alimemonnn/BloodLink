@@ -1,4 +1,5 @@
 {% extends "dashboard_base.html" %}
+{% from "_macros.html" import progress_block %}
 {% from "_macros.html" import donor_row %}
 {% set active = 'requests' %}
 {% block title %}Request #{{ blood_request.id }}{% endblock %}
@@ -9,7 +10,7 @@
 {% block dash_content %}
 <div class="panel">
   <div class="d-flex gap-2 flex-wrap mb-3">
-    <span class="badge bg-{{ blood_request.status_color }} fs-6">{{ blood_request.status }}</span>
+    <span class="badge bg-{{ blood_request.status_color }} fs-6">{{ blood_request.status_label }}</span>
     <span class="badge bg-{{ blood_request.urgency_color }} fs-6">{{ blood_request.urgency }}</span>
     <span class="badge bg-{{ 'success' if blood_request.hospital_verified else 'secondary' }} fs-6">
       {{ 'Hospital verified' if blood_request.hospital_verified else 'Not verified' }}</span>
@@ -17,7 +18,7 @@
   <div class="row g-3">
     <div class="col-md-6"><strong>Patient name:</strong> {{ blood_request.patient_name }}</div>
     <div class="col-md-6"><strong>Posted by:</strong> {{ blood_request.patient.name }} ({{ blood_request.patient.email }})</div>
-    <div class="col-md-6"><strong>Units:</strong> {{ blood_request.units_required }}</div>
+    <div class="col-12">{{ progress_block(blood_request) }}</div>
     <div class="col-md-6"><strong>Contact:</strong> {{ blood_request.contact_number }}</div>
     <div class="col-md-6"><strong>Created:</strong> {{ blood_request.created_at.strftime('%d %b %Y, %H:%M') }}</div>
     <div class="col-md-6"><strong>Expires:</strong> {{ blood_request.expiry_date.strftime('%d %b %Y') if blood_request.expiry_date else '-' }}</div>
@@ -54,7 +55,7 @@
   {% if blood_request.responses %}
   <div class="table-responsive">
     <table class="table align-middle">
-      <thead><tr><th>Donor</th><th>Group</th><th>City</th><th>Contact</th><th>Status</th></tr></thead>
+      <thead><tr><th>Donor</th><th>Group</th><th>City</th><th>Contact</th><th>Status</th><th>Units</th></tr></thead>
       <tbody>
       {% for resp in blood_request.responses %}
       <tr>
@@ -63,6 +64,7 @@
         <td>{{ resp.donor.city }}</td>
         <td class="text-nowrap">{{ resp.donor.phone }}</td>
         <td><span class="badge bg-{{ resp.status_color }}">{{ resp.response_status }}</span></td>
+        <td>{{ resp.units_collected if resp.response_status == 'Donation Completed' else resp.units_pledged ~ ' pledged' }}</td>
       </tr>
       {% endfor %}
       </tbody>

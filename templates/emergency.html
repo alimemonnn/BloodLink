@@ -6,7 +6,7 @@
   <div class="container">
     <div class="section-title">
       <h1>Emergency blood requests</h1>
-      <p>Every request here has been verified by the hospital named on it. Log in as a donor to respond.</p>
+      <p>Every request here was approved by the hospital named on it. Log in as a donor to respond.</p>
     </div>
 
     <form class="panel mb-4" method="get">
@@ -43,7 +43,7 @@
     {{ pagination(requests, 'public.emergency', filters) }}
     {% else %}
     <div class="empty-state">
-      <i class="fa-regular fa-circle-check"></i>
+      <i class="fa-regular fa-circle-check" aria-hidden="true"></i>
       <p class="mb-0">No approved requests match these filters right now.</p>
     </div>
     {% endif %}

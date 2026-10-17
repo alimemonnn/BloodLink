@@ -20,7 +20,7 @@
     <div class="col-md-5 d-flex gap-2">
       <button class="btn btn-blood" type="submit">Search</button>
       <a class="btn btn-outline-navy" href="{{ url_for('admin.hospitals') }}">Reset</a>
-      <a class="btn btn-outline-navy ms-auto" href="{{ url_for('admin.add_hospital') }}"><i class="fa-solid fa-plus"></i> Add hospital</a>
+      <a class="btn btn-outline-navy ms-auto" href="{{ url_for('admin.add_hospital') }}"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add hospital</a>
     </div>
   </div>
 </form>
@@ -54,7 +54,7 @@
   </div>
   {{ pagination(hospitals, 'admin.hospitals', filters) }}
   {% else %}
-  <div class="empty-state"><i class="fa-solid fa-hospital"></i>
+  <div class="empty-state"><i class="fa-solid fa-hospital" aria-hidden="true"></i>
     <p>No hospitals match this search.</p>
     <a class="btn btn-blood" href="{{ url_for('admin.add_hospital') }}">Add a hospital</a></div>
   {% endif %}

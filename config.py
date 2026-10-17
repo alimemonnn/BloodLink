@@ -75,6 +75,63 @@ class Config:
     # in the "Find a donor" results. Set to False to keep numbers private.
     SHOW_DONOR_CONTACT_TO_REQUESTERS = True
 
+    # ---- Allocation rules -------------------------------------------
+    # One unit per donor per donation event by default. A hospital may record
+    # more only if you raise this (it must be a medically approved amount).
+    MAX_UNITS_PER_DONOR_DONATION = 1
+    MAX_UNITS_PER_REQUEST = 20
+    MIN_ACCOUNT_AGE = 18          # donors and account holders must be adults
+
+    # ---- Matching weights (rule-based, NOT machine learning) ----------
+    # Hard medical filters are applied first; weights only order what is left.
+    MATCH_WEIGHTS = {"same_city": 40, "exact_group": 20, "never_donated_or_long_rest": 10,
+                     "recent_response_penalty": -15}
+
+    # ---- Legal / business details shown in the footer and policies -----
+    # Set these in the environment. Nothing here is invented: an empty value
+    # is simply not displayed.
+    BUSINESS_NAME = os.environ.get("BUSINESS_NAME", "BloodLink")
+    BUSINESS_OPERATOR = os.environ.get("BUSINESS_OPERATOR", "Muhammad Ali (university project)")
+    BUSINESS_ADDRESS = os.environ.get("BUSINESS_ADDRESS", "Sukkur, Sindh, Pakistan")
+    BUSINESS_EMAIL = os.environ.get("BUSINESS_EMAIL", "").strip()
+    BUSINESS_PHONE = os.environ.get("BUSINESS_PHONE", "").strip()
+    BUSINESS_REGISTRATION = os.environ.get("BUSINESS_REGISTRATION", "").strip()
+    POLICY_VERSION = "2026-10-16.2"       # bump when a policy changes materially
+    POLICY_EFFECTIVE_DATE = "16 October 2026"
+
+    # ---- Chat (coordination between donor, patient and hospital) -----
+    CHAT_MAX_LENGTH = 1000
+    CHAT_RATE_LIMIT = 20          # messages ...
+    CHAT_RATE_WINDOW = 60         # ... per this many seconds, per person per thread
+    CHAT_RETENTION_DAYS = 90      # messages are deleted this long after the request closed
+    # One-time shared locations are the most sensitive thing in a chat, so they expire quickly
+    CHAT_LOCATION_VISIBLE_HOURS = 6      # coordinates stop being shown after this long
+    CHAT_LOCATION_RETENTION_HOURS = 24   # and are erased from the database after this long
+    CHAT_LOCATION_LIMIT = 5              # shares allowed ...
+    CHAT_LOCATION_WINDOW = 600           # ... per this many seconds, per person per thread
+
+    # ---- Data retention (applied by `flask retention-cleanup`) ---------
+    CONTACT_MESSAGE_RETENTION_DAYS = 180
+    CLOSED_REQUEST_ANONYMISE_DAYS = 365
+    DATA_REQUEST_RETENTION_DAYS = 365
+    AUDIT_LOG_RETENTION_DAYS = 730
+
+    # ---- Optional email (in-app notifications always work without it) --
+    SMTP_HOST = os.environ.get("SMTP_HOST", "").strip()
+    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587") or 587)
+    SMTP_USER = os.environ.get("SMTP_USER", "").strip()
+    SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+    SMTP_FROM = os.environ.get("SMTP_FROM", "").strip()
+    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+
     # Optional: create the first admin from environment variables on startup.
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
+
+
+class TestingConfig(Config):
+    """Used by the automated tests only: fake data, CSRF off, separate database."""
+    TESTING = True
+    WTF_CSRF_ENABLED = False
+    ADMIN_EMAIL = None
+    ADMIN_PASSWORD = None

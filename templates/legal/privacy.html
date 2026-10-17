@@ -1,0 +1,84 @@
+{% extends "legal/_layout.html" %}
+{% block title %}Privacy policy{% endblock %}
+{% block legal_title %}Privacy policy{% endblock %}
+{% block legal_body %}
+<p class="lead">This policy explains what personal data BloodLink collects, why, who can see it, how long we keep it, and how you can control it. We collect as little as we can to connect patients, hospitals and donors.</p>
+
+<h2 id="who">1. Who is responsible</h2>
+<p><strong>{{ business.name }}</strong>, operated by {{ business.operator }}, {{ business.address }}.
+{% if business.email %}Email: <a href="mailto:{{ business.email }}">{{ business.email }}</a>.{% endif %}
+{% if business.phone %}Phone: {{ business.phone }}.{% endif %}
+You can always use the <a href="{{ url_for('public.contact') }}">contact form</a>. BloodLink is a university project, not a hospital, blood bank or medical provider.</p>
+
+<h2 id="collect">2. What we collect and why</h2>
+<div class="table-responsive"><table class="table">
+<thead><tr><th scope="col">Who</th><th scope="col">Data</th><th scope="col">Why</th></tr></thead>
+<tbody>
+<tr><th scope="row">Donors</th><td>Name, email, phone, blood group, city, optional area, last donation date, availability, hospital-recorded outcomes (donation verified, units, any deferral date), password (stored only as a one-way hash).</td><td>To match you to compatible requests and let a hospital contact you.</td></tr>
+<tr><th scope="row">Patients and family members</th><td>Account holder name, email, phone, city. For each request: patient name, blood group, units, hospital, location, contact number, an optional note, and whether the patient is under 18 (guardian confirmation).</td><td>So the hospital can verify the request and donors can be found.</td></tr>
+<tr><th scope="row">Hospitals</th><td>Hospital name, address, city, email, phone, and the approve / reject / confirm decisions made on requests.</td><td>To verify hospitals and keep a record of who confirmed each donation.</td></tr>
+<tr><th scope="row">Donors, patients and hospitals who use chat</th><td>The messages you send in a conversation about a donor offer, when you sent them, which messages you have read, and any report you file about a conversation. If you tap &ldquo;Share my location&rdquo; (donors and patients only), the one position your device reports at that moment.</td><td>So the donor, the patient&rsquo;s family and the hospital can arrange a donation without sharing phone numbers. Only these three parties can read a conversation. An administrator can read it only after someone reports it.</td></tr>
+<tr><th scope="row">Everyone</th><td>Login timestamp, a short audit log of important actions (for example &ldquo;donation confirmed&rdquo;), your consent choices and the policy version you accepted, and the session cookie.</td><td>Security, abuse prevention and accountability.</td></tr>
+<tr><th scope="row">Contact and data-request forms</th><td>Name, optional email, your message.</td><td>To answer you and to handle your privacy request.</td></tr>
+</tbody></table></div>
+<p><strong>We do not collect:</strong> date of birth, national ID numbers, precise (GPS) location, payment details, photos, or advertising identifiers. We do not use analytics or tracking. We ask you not to put diagnoses or other medical details in free-text notes.</p>
+
+<h2 id="health">3. Health-related data</h2>
+<p>Your blood group and donation dates relate to health. Donors give separate, explicit consent for this when registering, and can withdraw it by deleting their account at any time. A donor&rsquo;s own statement about availability is <em>not</em> a medical clearance: only a hospital decides whether someone may donate.</p>
+
+<h2 id="see">4. Who can see what</h2>
+<ul>
+<li><strong>The public</strong> sees only totals and open requests showing blood group, hospital, city, progress and the patient&rsquo;s initials. Never names, phone numbers or notes.</li>
+<li><strong>Logged-in patients, hospitals and admins</strong> can search the donor list. They see a donor&rsquo;s name, city and blood group. A donor&rsquo;s phone and email appear only if that donor ticked &ldquo;share my contact details&rdquo;.</li>
+<li><strong>When a donor offers to help</strong> with a request, they agree (tick box) to share their name and phone with that request&rsquo;s hospital and patient.</li>
+<li><strong>The hospital named on a request</strong> sees that request&rsquo;s patient and donor details. Other hospitals cannot.</li>
+<li><strong>Donors</strong> never see a patient&rsquo;s name, phone or notes.</li>
+<li><strong>Administrators</strong> can see account and request data in order to run and protect the service.</li>
+</ul>
+
+<h2 id="share">5. Third parties</h2>
+<ul>
+<li>No analytics, advertising, social-media or tracking services. Fonts, icons and scripts are served from this site, so your browser does not contact other companies just by loading a page. See <a href="{{ url_for('legal.licenses') }}">licences</a>.</li>
+<li><strong>Hosting and database providers</strong> store the data on our behalf. They may be located outside Pakistan.</li>
+<li><strong>Email</strong> is sent only if the operator has configured an email service and you opted in to email alerts. Each email contains a one-click unsubscribe link.</li>
+<li><strong>Call and WhatsApp buttons</strong> appear only for donors who agreed to share their contact details. Tapping WhatsApp opens WhatsApp, which then handles that conversation under its own policy.</li>
+<li>We do not sell personal data.</li>
+</ul>
+
+<h2 id="legal-basis">6. Our basis for using your data</h2>
+<p>Your <strong>consent</strong> (account registration, health data, contact sharing, email alerts), and what is necessary to provide the service you asked for. We also keep basic security logs to prevent abuse. We follow widely recognised data-protection principles: lawfulness, purpose limitation, data minimisation, accuracy, storage limitation, security and accountability, and we will comply with any data-protection law that applies to this service.</p>
+
+<h2 id="retention">7. How long we keep data</h2>
+<div class="table-responsive"><table class="table">
+<thead><tr><th scope="col">Data</th><th scope="col">Kept for</th></tr></thead>
+<tbody>
+<tr><td>Account data</td><td>Until you delete your account (or an administrator erases it).</td></tr>
+<tr><td>Blood requests</td><td>Personal fields (patient name, contact, notes) are removed 365 days after the request closes. Unit counts remain in anonymised form.</td></tr>
+<tr><td>Verified donation counts</td><td>If you delete your account, the count of a verified donation stays, with no identity attached, so a hospital&rsquo;s request record stays accurate.</td></tr>
+<tr><td>Locations shared in chat</td><td>Shown for 6 hours, then hidden; the coordinates are erased from our database after 24 hours. We never track your location in the background, and administrators never see coordinates.</td></tr>
+<tr><td>Chat messages</td><td>90 days after the request closes. Messages you wrote are also deleted when you delete your account.</td></tr>
+<tr><td>Contact messages</td><td>180 days.</td></tr>
+<tr><td>Data-request records</td><td>365 days after we finish handling them.</td></tr>
+<tr><td>Audit log</td><td>730 days.</td></tr>
+<tr><td>Consent records</td><td>Deleted with your account.</td></tr>
+</tbody></table></div>
+
+<h2 id="rights">8. Your rights and how to use them</h2>
+<ul>
+<li><strong>Access / copy:</strong> logged-in users can <a href="{{ url_for('account.export') }}">download their data</a> (JSON). Others can use the <a href="{{ url_for('legal.data_request', kind='access') }}">data request form</a>.</li>
+<li><strong>Correct:</strong> edit your profile, or use the <a href="{{ url_for('legal.data_request', kind='correct') }}">form</a>.</li>
+<li><strong>Delete:</strong> donors and patients can delete their account themselves from the profile page. Anyone else can use the <a href="{{ url_for('legal.data_request', kind='delete') }}">deletion request form</a>. Deleting is as easy as registering.</li>
+<li><strong>Withdraw consent</strong> (contact sharing, email alerts) in your donor profile, or unsubscribe from any email in one click.</li>
+<li><strong>Complain:</strong> you may contact the data-protection or consumer authority in your country.</li>
+</ul>
+<p>For requests made without logging in, an administrator confirms your identity by email before changing or deleting anything. We aim to respond within 30 days.</p>
+
+<h2 id="children">9. Children</h2>
+<p>You must be {{ min_age }} or older to create a donor or patient account, and we do not knowingly collect data directly from children. A parent or legal guardian may post a request for a child; they must confirm this on the request form. If you believe a child has registered, tell us and we will remove the account.</p>
+
+<h2 id="security">10. Security</h2>
+<p>Passwords are hashed. Forms are protected against cross-site request forgery. Login attempts are rate-limited. Sessions use secure, HTTP-only cookies in production. No online service is perfectly secure; if a breach affects you we will tell you and the relevant authority where required.</p>
+
+<h2 id="changes">11. Changes</h2>
+<p>If this policy changes materially we will update the version and date above, and ask for your consent again where the law requires it.</p>
+{% endblock %}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "auth/_consents.html" import terms with context %}
 {% block title %}Hospital registration{% endblock %}
 {% block content %}
 <div class="container">
@@ -38,6 +39,10 @@
             <input class="form-control" id="confirm_password" name="confirm_password" type="password" required minlength="8">
           </div>
         </div>
+        <fieldset class="consents mt-4">
+          <legend class="h6">Consent</legend>
+          {{ terms(form) }}
+        </fieldset>
         <button class="btn btn-blood w-100 mt-4" type="submit">Submit for verification</button>
       </form>
       <p class="mt-3 mb-0 text-center">Already verified? <a href="{{ url_for('auth.login', role='hospital') }}">Log in</a></p>

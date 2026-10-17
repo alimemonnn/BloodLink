@@ -1,16 +1,20 @@
-"""Create the database and fill it with realistic demo data.
+"""Fill an EMPTY database with fake demo data (development / demo only).
 
-Run once before the first demo:
+    python seed.py            # only works on an empty database
+    python seed.py --reset    # ERASES every table first (asks you to type YES)
 
-    python seed.py
-
-Default admin login:  admin@bloodlink.com / Admin123
+Never run this against a real deployment: it refuses when ENVIRONMENT/FLASK_ENV
+is production. All people below are fictional and use example.com addresses.
+Demo logins are printed at the end and exist only in your local database.
 """
+import sys
 from datetime import date, datetime, timedelta
 
 from app import create_app
-from models import (STATUS_APPROVED, STATUS_FULFILLED, STATUS_PENDING,
-                    Admin, BloodRequest, DonationResponse, Donor, Hospital,
+from config import IS_PRODUCTION
+from models import (RESP_COMPLETED, RESP_SCHEDULED, STATUS_APPROVED, STATUS_FULFILLED,
+                    STATUS_PARTIAL, STATUS_PENDING, Admin, BloodRequest,
+                    ChatMessage, ConsentRecord, DonationResponse, Donor, Hospital,
                     Notification, Patient, db)
 from utils.notifications import notify_matching_donors
 
@@ -21,9 +25,17 @@ def days_ago(n):
     return date.today() - timedelta(days=n)
 
 
-def seed():
-    db.drop_all()
+def seed(reset=False):
+    if IS_PRODUCTION:
+        raise SystemExit("Refusing to seed a production environment.")
+    if reset:
+        if input("This ERASES all data in the configured database. Type YES to continue: ") != "YES":
+            raise SystemExit("Cancelled. Nothing was changed.")
+        db.drop_all()
     db.create_all()
+    if Donor.query.first() or Admin.query.first():
+        raise SystemExit("The database already has data. Nothing was changed. "
+                         "Use `python seed.py --reset` only if you really want to wipe it.")
 
     # ------------------------------------------------------------------
     # Admin (password is hashed, never stored as plain text)
@@ -76,6 +88,9 @@ def seed():
                   area=area, last_donation_date=last, availability=availability, is_active=True)
         d.set_password("Donor123")
         d.refresh_eligibility()
+        d.share_contact_consent = group in ("B+", "O+", "O-")   # demo: a mix of consent choices
+        d.terms_accepted_at = d.age_confirmed_at = d.health_data_consent_at = datetime.utcnow()
+        d.policy_version = app.config["POLICY_VERSION"]
         donors.append(d)
         db.session.add(d)
 
@@ -89,7 +104,9 @@ def seed():
     ]
     patients = []
     for name, email, phone, city, address in patient_data:
-        p = Patient(name=name, email=email, phone=phone, city=city, address=address)
+        p = Patient(name=name, email=email, phone=phone, city=city,
+                    terms_accepted_at=datetime.utcnow(), age_confirmed_at=datetime.utcnow(),
+                    policy_version=app.config["POLICY_VERSION"])
         p.set_password("Patient123")
         patients.append(p)
         db.session.add(p)
@@ -126,6 +143,14 @@ def seed():
                      description="Planned procedure next month.",
                      status=STATUS_FULFILLED, hospital_verified=True),
     ]
+    # Multi-donor demo: 3 units of O+ needed, 2 already verified by the hospital.
+    multi = BloodRequest(patient_id=patients[1].id, hospital_id=hospitals[0].id,
+                         patient_name="Demo Patient", blood_group_required="O+",
+                         units_required=3, urgency="Urgent", location="Sukkur",
+                         contact_number="03111234502",
+                         description="Demo of a three-unit request.",
+                         status=STATUS_PARTIAL, hospital_verified=True)
+    requests.append(multi)
     db.session.add_all(requests)
     db.session.commit()
 
@@ -138,8 +163,51 @@ def seed():
         DonationResponse(donor_id=donors[1].id, request_id=requests[0].id,
                          response_status="Interested"),
         DonationResponse(donor_id=donors[3].id, request_id=requests[3].id,
-                         response_status="Donation Completed", donation_date=days_ago(40)),
+                         response_status=RESP_COMPLETED, units_collected=1,
+                         donation_date=days_ago(40), verified_by_hospital_id=hospitals[0].id,
+                         verified_at=datetime.utcnow() - timedelta(days=40)),
+        # Three-unit request: two verified donations, one donor still interested
+        DonationResponse(donor_id=donors[8].id, request_id=multi.id, response_status=RESP_COMPLETED,
+                         units_collected=1, donation_date=days_ago(1),
+                         verified_by_hospital_id=hospitals[0].id, verified_at=datetime.utcnow()),
+        DonationResponse(donor_id=donors[1].id, request_id=multi.id, response_status=RESP_COMPLETED,
+                         units_collected=1, donation_date=days_ago(1),
+                         verified_by_hospital_id=hospitals[0].id, verified_at=datetime.utcnow()),
+        DonationResponse(donor_id=donors[3].id, request_id=multi.id, response_status=RESP_SCHEDULED,
+                         contact_consent_at=datetime.utcnow(),
+                         appointment_at=(datetime.utcnow() + timedelta(days=1)).replace(hour=17, minute=30, second=0, microsecond=0)),
     ])
+    # A short demo conversation on each of two live offers
+    def conversation(donor, req, lines):
+        resp = DonationResponse.query.filter_by(donor_id=donor.id, request_id=req.id).first()
+        who = {"d": ("donor", donor.id), "p": ("patient", req.patient_id), "h": ("hospital", req.hospital_id),
+               "e": ("system", 0)}
+        t = datetime.utcnow() - timedelta(minutes=5 * len(lines))
+        for i, (sender, text) in enumerate(lines):
+            role, uid = who[sender]
+            db.session.add(ChatMessage(response_id=resp.id, sender_role=role, sender_id=uid,
+                                       body=text, kind="event" if sender == "e" else "text",
+                                       created_at=t + timedelta(minutes=5 * i)))
+        db.session.commit()
+
+    conversation(donors[3], multi, [
+        ("e", "The donor offered 1 unit(s). Use this chat to agree a time with the hospital."),
+        ("d", "Hello, I saw the request and I am free this evening. Which ward should I come to?"),
+        ("p", "Thank you so much. The blood bank at the hospital, ground floor. Ask for the O+ request."),
+        ("h", "Hello. Please come between 5 and 7 pm and bring your CNIC. We will screen you before collecting."),
+        ("e", "Appointment scheduled for tomorrow at 17:30."),
+        ("d", "Understood, I will be there at 5:30."),
+    ])
+    conversation(donors[0], requests[0], [
+        ("h", "Thanks for offering. Are you available tomorrow morning for a short screening?"),
+        ("d", "Yes, around 10 am works for me."),
+    ])
+
+    donors[1].last_donation_date = donors[8].last_donation_date = days_ago(1)
+    for d in donors:
+        d.refresh_eligibility()
+        db.session.add(ConsentRecord(subject_role="donor", subject_id=d.id, purpose="terms_privacy",
+                                     policy_version=app.config["POLICY_VERSION"]))
     db.session.commit()
 
     # Notifications for the two approved requests
@@ -158,14 +226,6 @@ def seed():
 
 
 if __name__ == "__main__":
-    import sys
-
-    uri = app.config["SQLALCHEMY_DATABASE_URI"]
-    # seed() DROPS every table first. Against a real (cloud) database that
-    # would erase live data, so it must be requested explicitly.
-    if not uri.startswith("sqlite") and "--force" not in sys.argv:
-        print("Refusing to run: this would ERASE the database at DATABASE_URL.")
-        print("If you really want demo data on it, run:  python seed.py --force")
-        sys.exit(1)
+    reset_flag = "--reset" in sys.argv
     with app.app_context():
-        seed()
+        seed(reset=reset_flag)

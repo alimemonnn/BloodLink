@@ -2,7 +2,7 @@
 {% block title %}Access denied{% endblock %}
 {% block content %}
 <section class="section"><div class="container empty-state">
-  <i class="fa-solid fa-lock"></i>
+  <i class="fa-solid fa-lock" aria-hidden="true"></i>
   <h1>Unauthorized access</h1>
   <p>This page belongs to a different type of account. Log in with the right account to continue.</p>
   <a class="btn btn-blood" href="{{ url_for('public.index') }}">Back to home</a>

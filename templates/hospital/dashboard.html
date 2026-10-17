@@ -9,7 +9,7 @@
 {% block dash_content %}
 <div class="row g-3 mb-4">
   {{ stat_card('Awaiting approval', stats.pending, 'fa-hourglass-half', 'warning') }}
-  {{ stat_card('Approved and open', stats.approved, 'fa-circle-check', 'primary') }}
+  {{ stat_card('Open (no units yet)', stats.approved, 'fa-circle-check', 'primary') }}
   {{ stat_card('Critical cases', stats.critical, 'fa-triangle-exclamation', 'danger') }}
   {{ stat_card('Fulfilled', stats.fulfilled, 'fa-heart', 'success') }}
 </div>
@@ -35,9 +35,9 @@
       <tr>
         <td><strong>{{ r.patient_name }}</strong><div class="small text-muted">{{ r.created_at.strftime('%d %b %Y') }}</div></td>
         <td><span class="blood-chip sm">{{ r.blood_group_required }}</span></td>
-        <td>{{ r.units_required }}</td>
+        <td>{{ r.units_confirmed }} / {{ r.units_required }}</td>
         <td><span class="badge bg-{{ r.urgency_color }}">{{ r.urgency }}</span></td>
-        <td><span class="badge bg-{{ r.status_color }}">{{ r.status }}</span></td>
+        <td><span class="badge bg-{{ r.status_color }}">{{ r.status_label }}</span></td>
         <td>{{ r.response_count }}</td>
         <td><a class="btn btn-sm btn-outline-navy" href="{{ url_for('hospital.request_detail', request_id=r.id) }}">Review</a></td>
       </tr>
@@ -46,8 +46,16 @@
     </table>
   </div>
   {% else %}
-  <div class="empty-state"><i class="fa-regular fa-file-lines"></i>
+  <div class="empty-state"><i class="fa-regular fa-file-lines" aria-hidden="true"></i>
     <p class="mb-0">No patient has named this hospital in a request yet.</p></div>
   {% endif %}
 </div>
+
+{% if updates %}
+<div class="panel">
+  <h2 class="h5">Recent updates</h2>
+  <ul class="list-unstyled mb-0">{% for u in updates %}<li class="py-1">{{ u.message }} <span class="text-muted small">{{ u.created_at.strftime('%d %b, %H:%M') }}</span></li>{% endfor %}</ul>
+</div>
+{% endif %}
+<p class="small text-muted">Partially fulfilled: <strong>{{ stats.partial }}</strong> &middot; units still needed across open requests: <strong>{{ stats.outstanding_units }}</strong>.</p>
 {% endblock %}

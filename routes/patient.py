@@ -4,12 +4,14 @@ from datetime import datetime, timedelta
 from flask import (Blueprint, current_app, flash, redirect, render_template,
                    request, url_for)
 
-from models import (STATUS_APPROVED, STATUS_EXPIRED, STATUS_FULFILLED,
-                    STATUS_PENDING, STATUS_REJECTED, BloodRequest,
-                    DonationResponse, Hospital, db)
+from models import (ALL_STATUSES, LIVE_STATUSES, OPEN_STATUSES, STATUS_APPROVED,
+                    STATUS_FULFILLED, STATUS_PARTIAL, STATUS_PENDING,
+                    BloodRequest, Hospital, db)
+from utils import allocation
 from utils.auth import current_user, role_required
-from utils.matching import BLOOD_GROUPS, find_matching_donors
-from utils.validators import (URGENCY_LEVELS, validate_blood_request_form,
+from utils.matching import BLOOD_GROUPS
+from utils.notifications import account_updates
+from utils.validators import (URGENCY_LEVELS, checked, validate_blood_request_form,
                               validate_password, validate_patient_form)
 
 patient_bp = Blueprint("patient", __name__, url_prefix="/patient")
@@ -35,13 +37,15 @@ def dashboard():
     stats = {
         "total": len(requests_list),
         "pending": sum(1 for r in requests_list if r.status == STATUS_PENDING),
-        "approved": sum(1 for r in requests_list if r.status == STATUS_APPROVED),
+        "approved": sum(1 for r in requests_list if r.status in (STATUS_APPROVED, STATUS_PARTIAL)),
+        "outstanding_units": sum(r.units_remaining for r in requests_list if r.status in OPEN_STATUSES),
         "fulfilled": sum(1 for r in requests_list if r.status == STATUS_FULFILLED),
         "responses": sum(r.response_count for r in requests_list),
     }
     return render_template(
         "patient/dashboard.html", patient=patient,
         requests=requests_list[:5], stats=stats,
+        updates=account_updates("patient", patient.id, mark_read=True),
     )
 
 
@@ -56,8 +60,7 @@ def requests_list():
     items = query.order_by(BloodRequest.created_at.desc()).all()
     return render_template(
         "patient/requests.html", patient=patient, requests=items, status=status,
-        statuses=[STATUS_PENDING, STATUS_APPROVED, STATUS_REJECTED,
-                  STATUS_FULFILLED, STATUS_EXPIRED],
+        statuses=ALL_STATUSES,
     )
 
 
@@ -88,7 +91,19 @@ def new_request():
             for error in errors:
                 flash(error, "danger")
         else:
+            # A double-click must not create two identical requests.
+            duplicate = BloodRequest.query.filter(
+                BloodRequest.patient_id == patient.id, BloodRequest.hospital_id == hospital.id,
+                BloodRequest.blood_group_required == form["blood_group_required"],
+                BloodRequest.patient_name == form["patient_name"].strip(),
+                BloodRequest.units_required == int(form["units_required"]),
+                BloodRequest.status.in_(LIVE_STATUSES),
+                BloodRequest.created_at >= datetime.utcnow() - timedelta(minutes=2)).first()
+            if duplicate:
+                flash("This request was already submitted.", "info")
+                return redirect(url_for("patient.request_detail", request_id=duplicate.id))
             blood_request = BloodRequest(
+                guardian_confirmed_at=datetime.utcnow() if checked(form, "patient_is_minor") else None,
                 patient_id=patient.id,
                 hospital_id=hospital.id,
                 patient_name=form["patient_name"].strip(),
@@ -132,13 +147,9 @@ def request_detail(request_id):
         flash("Unauthorized access.", "danger")
         return redirect(url_for("patient.requests_list"))
 
-    matches = (
-        find_matching_donors(blood_request, limit=10)
-        if blood_request.status == STATUS_APPROVED else []
-    )
     return render_template(
-        "patient/request_detail.html", patient=patient,
-        blood_request=blood_request, matches=matches,
+        "patient/request_detail.html", patient=patient, blood_request=blood_request,
+        updates=account_updates("patient", patient.id, limit=5),
     )
 
 
@@ -195,96 +206,22 @@ def edit_request(request_id):
     )
 
 
-@patient_bp.route("/requests/<int:request_id>/fulfill", methods=["POST"])
-@role_required("patient")
-def mark_fulfilled(request_id):
-    patient = current_user()
-    blood_request = _owned_request(request_id, patient)
-    if blood_request is None:
-        flash("Unauthorized access.", "danger")
-        return redirect(url_for("patient.requests_list"))
-
-    if blood_request.status != STATUS_APPROVED:
-        flash("Only an approved request can be marked as fulfilled.", "warning")
-    elif blood_request.responses:
-        flash(
-            "This request has donor responses recorded. Please confirm receipt "
-            "against the specific donor who actually gave blood, so their "
-            "90-day donation cooldown starts correctly.",
-            "warning",
-        )
-    else:
-        blood_request.status = STATUS_FULFILLED
-        db.session.commit()
-        flash("Request marked as fulfilled. Donors will no longer see it.", "success")
-    return redirect(url_for("patient.request_detail", request_id=request_id))
-
-
-@patient_bp.route("/requests/<int:request_id>/confirm-donor/<int:response_id>", methods=["POST"])
-@role_required("patient")
-def confirm_donor(request_id, response_id):
-    """The patient confirms they actually received blood from this donor.
-
-    This is the single action that ties the whole loop together:
-    - the request is closed (Fulfilled) so it disappears from other donors,
-    - this donor's response is marked "Donation Completed",
-    - the donor's last_donation_date is set to today, which automatically
-      starts their 90-day cooldown (Donor.is_eligible is computed from this,
-      so no separate "deactivate" step is needed), and
-    - admins can see exactly which donor fulfilled the request, on the
-      request's donor-responses table.
-    """
-    patient = current_user()
-    blood_request = _owned_request(request_id, patient)
-    if blood_request is None:
-        flash("Unauthorized access.", "danger")
-        return redirect(url_for("patient.requests_list"))
-
-    response = DonationResponse.query.get_or_404(response_id)
-    if response.request_id != blood_request.id:
-        flash("That response does not belong to this request.", "danger")
-        return redirect(url_for("patient.request_detail", request_id=request_id))
-
-    if blood_request.status not in (STATUS_APPROVED, STATUS_FULFILLED):
-        flash("Only an approved request can be confirmed as received.", "warning")
-        return redirect(url_for("patient.request_detail", request_id=request_id))
-
-    if response.response_status == "Donation Completed":
-        flash("This donor is already recorded as having donated.", "info")
-        return redirect(url_for("patient.request_detail", request_id=request_id))
-
-    today = datetime.utcnow().date()
-    response.response_status = "Donation Completed"
-    response.donation_date = today
-
-    donor = response.donor
-    donor.last_donation_date = today
-    donor.refresh_eligibility()
-
-    blood_request.status = STATUS_FULFILLED
-
-    db.session.commit()
-    flash(
-        f"Thank you for confirming. {donor.name} is recorded as your donor and "
-        f"will not be matched again until {donor.next_eligible_date.strftime('%d %b %Y')}.",
-        "success",
-    )
-    return redirect(url_for("patient.request_detail", request_id=request_id))
-
-
 @patient_bp.route("/requests/<int:request_id>/cancel", methods=["POST"])
 @role_required("patient")
 def cancel_request(request_id):
+    """Cancel keeps the record (history) and tells any donors who had offered."""
     patient = current_user()
     blood_request = _owned_request(request_id, patient)
     if blood_request is None:
         flash("Unauthorized access.", "danger")
         return redirect(url_for("patient.requests_list"))
-
-    db.session.delete(blood_request)
-    db.session.commit()
-    flash("Request cancelled.", "info")
-    return redirect(url_for("patient.requests_list"))
+    try:
+        allocation.close_request(request_id, "patient", patient.id,
+                                 request.form.get("reason", "").strip())
+        flash("Request cancelled.", "info")
+    except allocation.AllocationError as err:
+        flash(str(err), "warning")
+    return redirect(url_for("patient.request_detail", request_id=request_id))
 
 
 @patient_bp.route("/profile", methods=["GET", "POST"])
@@ -302,7 +239,6 @@ def profile():
             patient.name = form["name"].strip()
             patient.phone = form["phone"].strip()
             patient.city = form["city"].strip()
-            patient.address = form.get("address", "").strip()
             db.session.commit()
             flash("Profile updated.", "success")
             return redirect(url_for("patient.profile"))

@@ -1,0 +1,19 @@
+{% extends "legal/_layout.html" %}
+{% block title %}Open-source licences{% endblock %}
+{% block legal_title %}Open-source licences and credits{% endblock %}
+{% block legal_body %}
+<p class="lead">Everything the site loads is hosted here, with no CDN. These are the third-party components we ship and the licence each one allows. Full licence texts are linked.</p>
+<div class="table-responsive"><table class="table">
+<thead><tr><th scope="col">Component</th><th scope="col">Version</th><th scope="col">Used for</th><th scope="col">Licence</th></tr></thead>
+<tbody>
+<tr><th scope="row">Bricolage Grotesque (font)</th><td>Fontsource latin 600&ndash;800</td><td>Headings</td><td><a href="{{ url_for('static', filename='vendor/licenses/Bricolage-Grotesque-OFL-1.1.txt') }}">SIL Open Font License 1.1</a></td></tr>
+<tr><th scope="row">Plus Jakarta Sans (font)</th><td>Fontsource latin 400&ndash;700</td><td>Body text</td><td><a href="{{ url_for('static', filename='vendor/licenses/Plus-Jakarta-Sans-OFL-1.1.txt') }}">SIL Open Font License 1.1</a></td></tr>
+<tr><th scope="row">Font Awesome Free</th><td>6.5.2</td><td>Icons</td><td>Icons: CC BY 4.0 &middot; Fonts: SIL OFL 1.1 &middot; Code: MIT. <a href="{{ url_for('static', filename='vendor/licenses/Font-Awesome-Free-LICENSE.txt') }}">Licence text</a>. Icons by Fonticons, Inc. (<a href="https://fontawesome.com/license/free" rel="noopener noreferrer">fontawesome.com/license/free</a>)</td></tr>
+<tr><th scope="row">Bootstrap</th><td>5.3.3</td><td>Layout and components</td><td><a href="{{ url_for('static', filename='vendor/licenses/Bootstrap-MIT.txt') }}">MIT</a></td></tr>
+<tr><th scope="row">Chart.js</th><td>4.4.3</td><td>Admin charts</td><td><a href="{{ url_for('static', filename='vendor/licenses/Chart.js-MIT.txt') }}">MIT</a></td></tr>
+</tbody></table></div>
+<h2>Images</h2>
+<p>BloodLink uses no photographs or stock images. The droplet logo and heartbeat line are original vector drawings made for this project.</p>
+<h2>Python packages</h2>
+<p>The server uses Flask, SQLAlchemy, Flask-SQLAlchemy, Werkzeug and Gunicorn (BSD / MIT licences). See <code>requirements.txt</code>.</p>
+{% endblock %}

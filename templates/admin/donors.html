@@ -70,7 +70,7 @@
   </div>
   {{ pagination(donors, 'admin.donors', filters) }}
   {% else %}
-  <div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i><p class="mb-0">No donors match this search.</p></div>
+  <div class="empty-state"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><p class="mb-0">No donors match this search.</p></div>
   {% endif %}
 </div>
 {% endblock %}

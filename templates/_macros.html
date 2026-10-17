@@ -3,12 +3,33 @@
 {% macro stat_card(label, value, icon, color='danger') %}
 <div class="col-6 col-lg-3">
   <div class="stat-card border-{{ color }}">
-    <div class="stat-icon text-{{ color }}"><i class="fa-solid {{ icon }}"></i></div>
+    <div class="stat-icon text-{{ color }}"><i class="fa-solid {{ icon }}" aria-hidden="true"></i></div>
     <div>
       <div class="stat-value">{{ value }}</div>
       <div class="stat-label">{{ label }}</div>
     </div>
   </div>
+</div>
+{% endmacro %}
+
+{# Accessible progress block: required / pledged / confirmed / remaining #}
+{% macro progress_block(r, compact=False) %}
+<div class="unit-progress">
+  <div class="progress" role="progressbar" aria-label="Units confirmed for request {{ r.id }}"
+       aria-valuenow="{{ r.units_confirmed }}" aria-valuemin="0" aria-valuemax="{{ r.required }}"
+       aria-valuetext="{{ r.units_confirmed }} of {{ r.required }} units confirmed">
+    <div class="progress-bar" style="width: {{ r.progress_percent }}%"></div>
+  </div>
+  {% if compact %}
+  <div class="small mt-1"><strong>{{ r.units_confirmed }}</strong> of {{ r.required }} units confirmed &middot; {{ r.units_remaining }} remaining</div>
+  {% else %}
+  <dl class="unit-figures">
+    <div><dt>Required</dt><dd>{{ r.required }}</dd></div>
+    <div><dt>Pledged (not yet verified)</dt><dd>{{ r.units_pledged }}</dd></div>
+    <div><dt>Confirmed by hospital</dt><dd>{{ r.units_confirmed }}</dd></div>
+    <div><dt>Remaining</dt><dd>{{ r.units_remaining }}</dd></div>
+  </dl>
+  {% endif %}
 </div>
 {% endmacro %}
 
@@ -19,16 +40,13 @@
       <span class="blood-chip">{{ r.blood_group_required }}</span>
       <span class="badge bg-{{ r.urgency_color }}">{{ r.urgency }}</span>
     </header>
-    <h5>{{ r.patient_name }}</h5>
+    <h5>{{ r.blood_group_required }} needed <span class="text-muted fs-6">&middot; patient {{ r.public_label }}</span></h5>
     <ul class="request-meta">
-      <li><i class="fa-solid fa-hospital"></i> {{ r.hospital.hospital_name }}</li>
-      <li><i class="fa-solid fa-location-dot"></i> {{ r.location }}</li>
-      <li><i class="fa-solid fa-flask"></i> {{ r.units_required }} unit(s) needed</li>
-      <li><i class="fa-regular fa-clock"></i> Posted {{ r.created_at.strftime('%d %b %Y') }}</li>
-      {% if show_contact %}<li><i class="fa-solid fa-phone"></i> {{ r.contact_number }}</li>{% endif %}
+      <li><i class="fa-solid fa-hospital" aria-hidden="true"></i> {{ r.hospital.hospital_name }}</li>
+      <li><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ r.location }}</li>
+      <li><i class="fa-regular fa-clock" aria-hidden="true"></i> Posted {{ r.created_at.strftime('%d %b %Y') }}</li>
     </ul>
-    {% if r.description %}<p class="request-note">{{ r.description }}</p>{% endif %}
-    {% if caller is defined %}{% endif %}
+    {{ progress_block(r, compact=True) }}
   </article>
 </div>
 {% endmacro %}
@@ -46,7 +64,7 @@
     {% if d.is_eligible %}<span class="badge bg-success">Eligible</span>
     {% else %}<span class="badge bg-warning text-dark">In {{ d.days_until_eligible }} days</span>{% endif %}
   </td>
-  {% if show_contact %}<td class="text-nowrap">{{ d.phone }}<div class="small text-muted">{{ d.email }}</div></td>{% endif %}
+  {% if show_contact %}<td class="text-nowrap">{% if d.share_contact_consent %}{{ d.phone }}<div class="small text-muted">{{ d.email }}</div>{% else %}<span class="text-muted small">Not shared. Contact via the hospital.</span>{% endif %}</td>{% endif %}
 </tr>
 {% endmacro %}
 

@@ -4,8 +4,11 @@ from collections import Counter
 from flask import (Blueprint, current_app, flash, redirect, render_template,
                    request, url_for)
 
-from models import (STATUS_APPROVED, STATUS_FULFILLED, BloodRequest, Donor,
-                    Hospital, Patient)
+from models import (OPEN_STATUSES, STATUS_FULFILLED, BloodRequest,
+                    ContactMessage, DonationResponse, Donor, Hospital, Patient, db)
+from sqlalchemy import func
+from utils import ratelimit
+from utils.validators import checked, validate_contact_form
 from utils.auth import current_user, remember_next
 from utils.matching import BLOOD_GROUPS, CAN_DONATE_TO, compatible_donor_groups
 
@@ -15,9 +18,10 @@ public_bp = Blueprint("public", __name__)
 def site_statistics():
     return {
         "donors": Donor.query.filter_by(is_active=True).count(),
-        "active_requests": BloodRequest.query.filter_by(status=STATUS_APPROVED).count(),
+        "active_requests": BloodRequest.query.filter(BloodRequest.status.in_(OPEN_STATUSES)).count(),
         "hospitals": Hospital.query.filter_by(is_active=True, is_verified=True).count(),
         "donations": BloodRequest.query.filter_by(status=STATUS_FULFILLED).count(),
+        "units": int(db.session.query(func.coalesce(func.sum(DonationResponse.units_collected), 0)).scalar() or 0),
         "patients": Patient.query.count(),
     }
 
@@ -25,7 +29,7 @@ def site_statistics():
 @public_bp.route("/")
 def index():
     urgent = (
-        BloodRequest.query.filter_by(status=STATUS_APPROVED)
+        BloodRequest.query.filter(BloodRequest.status.in_(OPEN_STATUSES))
         .order_by(BloodRequest.created_at.desc())
         .limit(6)
         .all()
@@ -134,6 +138,7 @@ def find_blood():
     page = Page(donors, request.args.get("page", 1, type=int), 12)
     cities = sorted({c for (c,) in Donor.query.with_entities(Donor.city).distinct() if c})
 
+    # Contact details only for roles that need them AND only for donors who agreed.
     show_contact = (
         current_app.config["SHOW_DONOR_CONTACT_TO_REQUESTERS"]
         and user.role in ("patient", "hospital", "admin")
@@ -153,7 +158,7 @@ def emergency():
     city = request.args.get("city", "").strip()
     urgency = request.args.get("urgency", "")
 
-    query = BloodRequest.query.filter_by(status=STATUS_APPROVED)
+    query = BloodRequest.query.filter(BloodRequest.status.in_(OPEN_STATUSES))
     if blood_group in BLOOD_GROUPS:
         query = query.filter_by(blood_group_required=blood_group)
     if city:
@@ -173,14 +178,24 @@ def emergency():
 
 @public_bp.route("/contact", methods=["GET", "POST"])
 def contact():
+    form = {}
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        message = request.form.get("message", "").strip()
-        if not name or not message:
-            flash("Please fill in your name and message.", "danger")
+        form = request.form.to_dict()
+        key = f"contact|{request.remote_addr}"
+        errors = validate_contact_form(form)
+        if ratelimit.is_blocked(key, 5, 3600):
+            errors.append("Too many messages from this address. Please try again later.")
+        if errors:
+            for error in errors:
+                flash(error, "danger")
         else:
-            # A university project keeps this simple: the message is
-            # acknowledged rather than emailed through a paid service.
-            flash("Thanks, your message has been received. We will reply by email.", "success")
+            ratelimit.record_failure(key, 3600)
+            db.session.add(ContactMessage(name=form["name"].strip(),
+                                          email=form.get("email", "").strip().lower() or None,
+                                          message=form["message"].strip()))
+            db.session.commit()
+            reply = ("We will reply to the email you gave." if form.get("email", "").strip()
+                     else "You did not give an email, so we cannot reply.")
+            flash(f"Your message was saved for the administrators. {reply}", "success")
             return redirect(url_for("public.contact"))
-    return render_template("contact.html")
+    return render_template("contact.html", form=form)

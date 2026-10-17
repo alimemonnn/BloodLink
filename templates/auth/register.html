@@ -10,21 +10,21 @@
     <div class="row g-4 justify-content-center">
       <div class="col-md-4">
         <a class="role-card" href="{{ url_for('auth.register_donor') }}">
-          <i class="fa-solid fa-hand-holding-droplet"></i>
+          <i class="fa-solid fa-hand-holding-droplet" aria-hidden="true"></i>
           <h5>I want to donate blood</h5>
           <p class="mb-0 text-muted">Set your availability and get notified when someone nearby needs your blood group.</p>
         </a>
       </div>
       <div class="col-md-4">
         <a class="role-card" href="{{ url_for('auth.register_patient') }}">
-          <i class="fa-solid fa-user-injured"></i>
+          <i class="fa-solid fa-user-injured" aria-hidden="true"></i>
           <h5>I need blood</h5>
           <p class="mb-0 text-muted">Register as a patient or family member and post a request for the hospital to verify.</p>
         </a>
       </div>
       <div class="col-md-4">
         <a class="role-card" href="{{ url_for('auth.register_hospital') }}">
-          <i class="fa-solid fa-hospital"></i>
+          <i class="fa-solid fa-hospital" aria-hidden="true"></i>
           <h5>I represent a hospital</h5>
           <p class="mb-0 text-muted">Verify patient requests and reach donors. An admin approves new hospitals.</p>
         </a>

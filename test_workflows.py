@@ -33,6 +33,10 @@ def login(client, role, email, password):
 
 
 def main():
+    # Always start from a brand-new throw-away database (never your real one).
+    test_db = TestConfig.SQLALCHEMY_DATABASE_URI.replace("sqlite:///", "")
+    if os.path.exists(test_db):
+        os.remove(test_db)
     app = create_app(TestConfig)
 
     # Build a fresh test database from the seed data
@@ -60,8 +64,8 @@ def main():
               all(d.availability == "Available" for d in matches))
         check("Ineligible donors are excluded", all(d.is_eligible for d in matches))
         check("Same-city donor is ranked first", matches[0].city.lower() in req.location.lower())
-        check("Exact group beats compatible group in the same city",
-              matches[0].blood_group == "B+")
+        check("Donors who already responded are not listed again",
+              all(d.email not in ("ahmed.ali@example.com", "m.hassan@example.com") for d in matches))
 
     print("\n3. Access control")
     client = app.test_client()
@@ -123,8 +127,9 @@ def main():
         check("Hospital approval marks the request verified", approved.hospital_verified is True)
         check("Matching donors received a notification",
               Notification.query.filter_by(request_id=new_req_id).count() > 0)
-    check("Approved request becomes visible to donors",
-          b"Test Patient" in donor_client.get("/donor/requests").data)
+    feed = donor_client.get("/donor/requests").data
+    check("Approved request becomes visible to donors", b"2 unit(s) still needed" in feed)
+    check("Donors never see the patient's name", b"Test Patient" not in feed)
 
     print("\n8. Hospital cannot touch another hospital's request")
     other = app.test_client()
@@ -134,12 +139,14 @@ def main():
                                                follow_redirects=True).data)
 
     print("\n9. Donor responds")
-    resp = donor_client.post(f"/donor/requests/{new_req_id}/respond", follow_redirects=True)
+    resp = donor_client.post(f"/donor/requests/{new_req_id}/respond",
+                             data={"share_with_hospital": "on"}, follow_redirects=True)
     with app.app_context():
         donor = Donor.query.filter_by(email="ahmed.ali@example.com").first()
         check("Response is stored", DonationResponse.query.filter_by(
             donor_id=donor.id, request_id=new_req_id).count() == 1)
-    resp = donor_client.post(f"/donor/requests/{new_req_id}/respond", follow_redirects=True)
+    resp = donor_client.post(f"/donor/requests/{new_req_id}/respond",
+                             data={"share_with_hospital": "on"}, follow_redirects=True)
     check("Duplicate response is blocked", b"already responded" in resp.data)
     with app.app_context():
         check("Still only one response row after the duplicate attempt",
@@ -149,12 +156,24 @@ def main():
     check("Approved request can no longer be edited by the patient",
           b"cannot be edited after the hospital has reviewed" in patient_client.get(
               f"/patient/requests/{new_req_id}/edit", follow_redirects=True).data)
-    hosp_client.post(f"/hospital/requests/{new_req_id}/fulfill", follow_redirects=True)
     with app.app_context():
-        check("Hospital can mark a request fulfilled",
-              db.session.get(BloodRequest, new_req_id).status == "Fulfilled")
-    check("Fulfilled request disappears from the donor feed",
-          b"Test Patient" not in donor_client.get("/donor/requests").data)
+        offer_id = DonationResponse.query.filter_by(request_id=new_req_id).first().id
+    check("There is no one-click 'fulfilled' route any more",
+          hosp_client.post(f"/hospital/requests/{new_req_id}/fulfill").status_code in (404, 405))
+    hosp_client.post(f"/hospital/requests/{new_req_id}/responses/{offer_id}/confirm",
+                     data={"units": "1"}, follow_redirects=True)
+    with app.app_context():
+        r = db.session.get(BloodRequest, new_req_id)
+        check("One of two units confirmed leaves the request Partially Fulfilled",
+              r.status == "Partially Fulfilled" and r.units_confirmed == 1 and r.units_remaining == 1)
+    cards_before = donor_client.get("/donor/requests").data.count(b'class="request-card')
+    hosp_client.post(f"/hospital/requests/{new_req_id}/close", data={"reason": "Arranged elsewhere"},
+                     follow_redirects=True)
+    with app.app_context():
+        check("Hospital can close a request with a reason",
+              db.session.get(BloodRequest, new_req_id).status == "Cancelled")
+    check("Closed request disappears from the donor feed",
+          donor_client.get("/donor/requests").data.count(b'class="request-card') == cards_before - 1)
 
     print("\n11. Donor availability and eligibility")
     donor_client.post("/donor/availability", follow_redirects=True)
@@ -166,13 +185,10 @@ def main():
         if req:
             check("Unavailable donor drops out of matching",
                   donor.id not in [d.id for d in find_matching_donors(req)])
-        resp_row = DonationResponse.query.filter_by(donor_id=donor.id).first()
-    donor_client.post(f"/donor/history/{resp_row.id}/update",
-                      data={"response_status": "Donation Completed"}, follow_redirects=True)
     with app.app_context():
         donor = Donor.query.filter_by(email="ahmed.ali@example.com").first()
-        check("Completing a donation records today's date", donor.last_donation_date is not None)
-        check("Donor becomes ineligible for three months", donor.is_eligible is False)
+        check("A hospital-verified donation records today's date", donor.last_donation_date is not None)
+        check("Donor starts the rest period after a verified donation", donor.is_eligible is False)
 
     print("\n12. Admin panel")
     admin_client = app.test_client()
@@ -202,6 +218,7 @@ def main():
         "name": "New Donor", "email": "new.donor@example.com", "phone": "03009998877",
         "password": "Secret123", "confirm_password": "Secret123", "blood_group": "O+",
         "city": "Sukkur", "area": "Test area", "last_donation_date": "", "availability": "Available",
+        "accept_terms": "on", "confirm_adult": "on", "health_consent": "on",
     }, follow_redirects=True)
     with app.app_context():
         check("New donor is saved", Donor.query.filter_by(email="new.donor@example.com").first() is not None)
@@ -209,12 +226,14 @@ def main():
         "name": "Future", "email": "future@example.com", "phone": "03009998800",
         "password": "Secret123", "confirm_password": "Secret123", "blood_group": "O+",
         "city": "Sukkur", "last_donation_date": "2099-01-01", "availability": "Available",
+        "accept_terms": "on", "confirm_adult": "on", "health_consent": "on",
     }, follow_redirects=True)
     check("Future donation date is rejected", b"cannot be in the future" in resp.data)
     resp = app.test_client().post("/register/donor", data={
         "name": "Dup", "email": "ahmed.ali@example.com", "phone": "03009998801",
         "password": "Secret123", "confirm_password": "Secret123", "blood_group": "O+",
         "city": "Sukkur", "availability": "Available",
+        "accept_terms": "on", "confirm_adult": "on", "health_consent": "on",
     }, follow_redirects=True)
     check("Duplicate email is rejected", b"already exists" in resp.data)
 

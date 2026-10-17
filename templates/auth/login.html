@@ -8,9 +8,9 @@
     <h2>Welcome back.</h2>
     <p>Someone in your city may need your blood group today. Sign in to see who.</p>
     <ul>
-      <li><i class="fa-solid fa-droplet"></i><span>Donors see verified requests that match their blood group.</span></li>
-      <li><i class="fa-solid fa-hospital"></i><span>Hospitals approve requests, so only genuine ones reach donors.</span></li>
-      <li><i class="fa-solid fa-shield-heart"></i><span>Your details stay private and are never shown to the public.</span></li>
+      <li><i class="fa-solid fa-droplet" aria-hidden="true"></i><span>Donors see verified requests that match their blood group.</span></li>
+      <li><i class="fa-solid fa-hospital" aria-hidden="true"></i><span>Hospitals review requests, so donors only see ones a hospital approved.</span></li>
+      <li><i class="fa-solid fa-shield-heart" aria-hidden="true"></i><span>Phone numbers and notes are never shown publicly. You can delete your account at any time.</span></li>
     </ul>
     {{ ecg() }}
   </aside>
@@ -23,10 +23,10 @@
         <div class="mb-3">
           <span class="form-label d-block">I am a</span>
           <div class="role-pills" role="radiogroup">
-            <input type="radio" name="role" id="r-donor" value="donor" {{ 'checked' if chosen == 'donor' }}><label for="r-donor"><i class="fa-solid fa-hand-holding-droplet"></i> Donor</label>
-            <input type="radio" name="role" id="r-patient" value="patient" {{ 'checked' if chosen == 'patient' }}><label for="r-patient"><i class="fa-solid fa-user-injured"></i> Patient</label>
-            <input type="radio" name="role" id="r-hospital" value="hospital" {{ 'checked' if chosen == 'hospital' }}><label for="r-hospital"><i class="fa-solid fa-hospital"></i> Hospital</label>
-            <input type="radio" name="role" id="r-admin" value="admin" {{ 'checked' if chosen == 'admin' }}><label for="r-admin"><i class="fa-solid fa-user-shield"></i> Admin</label>
+            <input type="radio" name="role" id="r-donor" value="donor" {{ 'checked' if chosen == 'donor' }}><label for="r-donor"><i class="fa-solid fa-hand-holding-droplet" aria-hidden="true"></i> Donor</label>
+            <input type="radio" name="role" id="r-patient" value="patient" {{ 'checked' if chosen == 'patient' }}><label for="r-patient"><i class="fa-solid fa-user-injured" aria-hidden="true"></i> Patient</label>
+            <input type="radio" name="role" id="r-hospital" value="hospital" {{ 'checked' if chosen == 'hospital' }}><label for="r-hospital"><i class="fa-solid fa-hospital" aria-hidden="true"></i> Hospital</label>
+            <input type="radio" name="role" id="r-admin" value="admin" {{ 'checked' if chosen == 'admin' }}><label for="r-admin"><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Admin</label>
           </div>
         </div>
         <div class="mb-3">
@@ -37,7 +37,7 @@
           <label class="form-label" for="password">Password</label>
           <div class="pw-wrap">
             <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required>
-            <button class="pw-toggle" type="button" aria-label="Show password" data-toggle-password="#password"><i class="fa-regular fa-eye"></i></button>
+            <button class="pw-toggle" type="button" aria-label="Show password" data-toggle-password="#password"><i class="fa-regular fa-eye" aria-hidden="true"></i></button>
           </div>
         </div>
         <button class="btn btn-blood btn-lg w-100" type="submit">Log in</button>

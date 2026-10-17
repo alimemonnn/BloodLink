@@ -15,9 +15,15 @@
 </div>
 <div class="row g-3 mb-4">
   {{ stat_card('Pending approval', stats.pending, 'fa-hourglass-half', 'warning') }}
-  {{ stat_card('Approved', stats.approved, 'fa-circle-check', 'primary') }}
+  {{ stat_card('Open', stats.approved, 'fa-circle-check', 'primary') }}
+  {{ stat_card('Partially fulfilled', stats.partial, 'fa-battery-half', 'primary') }}
   {{ stat_card('Fulfilled', stats.fulfilled, 'fa-heart', 'success') }}
-  {{ stat_card('Expired', stats.expired, 'fa-clock', 'dark') }}
+</div>
+<div class="row g-3 mb-4">
+  {{ stat_card('Outstanding units', stats.outstanding_units, 'fa-droplet', 'danger') }}
+  {{ stat_card('Verified donations', stats.verified_donations, 'fa-clipboard-check', 'success') }}
+  {{ stat_card('Verified hospitals', stats.verified_hospitals, 'fa-hospital', 'primary') }}
+  {{ stat_card('Open privacy requests', stats.open_data_requests, 'fa-user-shield', 'warning') }}
 </div>
 
 {% if stats.unverified_hospitals %}
@@ -49,13 +55,26 @@
     </table>
   </div>
   {% else %}
-  <div class="empty-state"><i class="fa-regular fa-user"></i><p class="mb-0">No one has registered yet.</p></div>
+  <div class="empty-state"><i class="fa-regular fa-user" aria-hidden="true"></i><p class="mb-0">No one has registered yet.</p></div>
   {% endif %}
 </div>
 
 <div class="panel">
   <h5>Donors by blood group</h5>
-  <canvas id="groupChart" height="120"></canvas>
+  <canvas id="groupChart" height="120" role="img" aria-label="Bar chart of registered donors by blood group. The same figures are in the table below."></canvas>
+  <table class="visually-hidden"><caption>Registered donors by blood group</caption>
+    <thead><tr><th scope="col">Blood group</th><th scope="col">Donors</th></tr></thead>
+    <tbody>{% for g, c in group_counts.items() %}<tr><th scope="row">{{ g }}</th><td>{{ c }}</td></tr>{% endfor %}</tbody></table>
+</div>
+<div class="panel">
+  <h5>Requests by urgency</h5>
+  <p class="mb-0">{% for u in ['Critical', 'Urgent', 'Normal'] %}<span class="me-3">{{ u }}: <strong>{{ by_urgency.get(u, 0) }}</strong></span>{% endfor %}</p>
+</div>
+<div class="panel">
+  <h5>Recent system activity</h5>
+  {% if recent_activity %}
+  <ul class="list-unstyled mb-0 small">{% for a in recent_activity %}<li class="py-1">{{ a.created_at.strftime('%d %b %H:%M') }} &middot; {{ a.actor_role }} #{{ a.actor_id }} &middot; {{ a.action }} ({{ a.target_type }} #{{ a.target_id }})</li>{% endfor %}</ul>
+  {% else %}<p class="text-muted mb-0">No activity recorded yet.</p>{% endif %}
 </div>
 
 <div class="panel">
@@ -74,7 +93,7 @@
         <td><span class="blood-chip sm">{{ r.blood_group_required }}</span></td>
         <td>{{ r.hospital.hospital_name }}</td>
         <td><span class="badge bg-{{ r.urgency_color }}">{{ r.urgency }}</span></td>
-        <td><span class="badge bg-{{ r.status_color }}">{{ r.status }}</span></td>
+        <td><span class="badge bg-{{ r.status_color }}">{{ r.status_label }}</span></td>
         <td><a class="btn btn-sm btn-outline-navy" href="{{ url_for('admin.request_detail', request_id=r.id) }}">Open</a></td>
       </tr>
       {% endfor %}
@@ -82,18 +101,18 @@
     </table>
   </div>
   {% else %}
-  <div class="empty-state"><i class="fa-regular fa-file-lines"></i><p class="mb-0">No requests have been posted yet.</p></div>
+  <div class="empty-state"><i class="fa-regular fa-file-lines" aria-hidden="true"></i><p class="mb-0">No requests have been posted yet.</p></div>
   {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
   new Chart(document.getElementById("groupChart"), {
     type: "bar",
     data: {
       labels: {{ group_counts.keys()|list|tojson }},
-      datasets: [{ label: "Registered donors", data: {{ group_counts.values()|list|tojson }}, backgroundColor: "#c1121f" }]
+      datasets: [{ label: "Registered donors", data: {{ group_counts.values()|list|tojson }}, backgroundColor: "#A30D2D" }]
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
   });

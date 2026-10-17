@@ -19,6 +19,9 @@ class Patient(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login_at = db.Column(db.DateTime, nullable=True)
+    terms_accepted_at = db.Column(db.DateTime)
+    age_confirmed_at = db.Column(db.DateTime)
+    policy_version = db.Column(db.String(20))
 
     requests = db.relationship(
         "BloodRequest", backref="patient", lazy=True, cascade="all, delete-orphan"

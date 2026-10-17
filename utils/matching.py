@@ -1,9 +1,18 @@
-"""Blood group compatibility and donor matching.
+"""Blood group compatibility and donor matching (rule-based, not machine learning).
 
-The matching engine answers one question: given an approved blood request,
-which registered donors can actually help?
+SCOPE: the table below is ABO/Rh compatibility for RED CELLS / whole blood.
+Plasma and platelets follow different rules and are NOT modelled here.
+A match is only a shortlist: the hospital must do screening, testing and
+crossmatching before any transfusion.
+
+Pipeline
+  1. HARD filters (never overridden by score): compatible group, active account,
+     marked available, interval since last donation, not deferred by a hospital,
+     has not already responded.
+  2. SCORE (transparent, configurable in config.MATCH_WEIGHTS) only orders the
+     donors that passed step 1. With no GPS data, proximity is city-level.
 """
-from models import Donor
+from models import Donor, db
 
 BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
 
@@ -35,50 +44,64 @@ def compatible_donor_groups(recipient_group):
     return [g for g, targets in CAN_DONATE_TO.items() if recipient_group in targets]
 
 
-def find_matching_donors(blood_request, limit=None, only_available=True):
-    """Return donors who can help with this request, best match first.
+from collections import namedtuple
 
-    Ranking:
-      1. exact blood group match in the same city
-      2. compatible blood group in the same city
-      3. exact blood group elsewhere
-      4. compatible blood group elsewhere
-    """
+Match = namedtuple("Match", "donor score reasons")
+
+
+def rank_donors(blood_request, only_available=True):
+    """Return ``Match(donor, score, reasons)`` tuples, best first."""
+    from datetime import date
+    from flask import current_app
+    from models import ACTIVE_RESPONSES, DonationResponse
+
+    weights = current_app.config["MATCH_WEIGHTS"]
     groups = compatible_donor_groups(blood_request.blood_group_required)
-
     query = Donor.query.filter(Donor.blood_group.in_(groups), Donor.is_active.is_(True))
     if only_available:
         query = query.filter(Donor.availability == "Available")
 
-    candidates = query.all()
-
-    # Eligibility is a computed value (depends on today's date), so it is
-    # filtered in Python rather than in SQL.
-    candidates = [d for d in candidates if d.is_eligible]
-
+    responded = {
+        did for (did,) in db.session.query(DonationResponse.donor_id).filter(
+            DonationResponse.request_id == blood_request.id,
+            DonationResponse.response_status.in_(ACTIVE_RESPONSES + ("Donation Completed",)),
+        )
+    }
     location = (blood_request.location or "").lower()
     hospital = getattr(blood_request, "hospital", None)
     hospital_city = (hospital.city or "").lower() if hospital else ""
 
-    def sort_key(donor):
-        # "Near" means the donor's city appears in the typed location OR is
-        # the city of the hospital the request is attached to.
+    matches = []
+    for donor in query.all():
+        if donor.id in responded or not donor.is_matchable:     # hard filters
+            continue
+        score, reasons = 0, ["Blood group is compatible"]
         city = (donor.city or "").lower()
-        same_city = bool(city) and (city in location or city == hospital_city)
-        exact = donor.blood_group == blood_request.blood_group_required
-        # lower tuple sorts first
-        return (0 if same_city else 1, 0 if exact else 1, donor.name.lower())
+        if city and (city in location or city == hospital_city):
+            score += weights["same_city"]; reasons.append("Same city as the hospital")
+        else:
+            reasons.append("Different city")
+        if donor.blood_group == blood_request.blood_group_required:
+            score += weights["exact_group"]; reasons.append("Exact blood group")
+        if donor.last_donation_date is None:
+            score += weights["never_donated_or_long_rest"]; reasons.append("No donation on record")
+        matches.append(Match(donor, score, reasons))
+    matches.sort(key=lambda m: (-m.score, m.donor.name.lower()))
+    return matches
 
-    candidates.sort(key=sort_key)
-    return candidates[:limit] if limit else candidates
+
+def find_matching_donors(blood_request, limit=None, only_available=True):
+    """Donors who can help with this request, best match first."""
+    donors = [m.donor for m in rank_donors(blood_request, only_available)]
+    return donors[:limit] if limit else donors
 
 
 def requests_for_donor(donor, base_query):
-    """Filter a BloodRequest query down to requests this donor can answer."""
-    from models import BloodRequest, STATUS_APPROVED
+    """Filter a BloodRequest query down to open requests this donor can answer."""
+    from models import OPEN_STATUSES, BloodRequest
 
     recipients = CAN_DONATE_TO.get(donor.blood_group, [])
     return base_query.filter(
-        BloodRequest.status == STATUS_APPROVED,
+        BloodRequest.status.in_(OPEN_STATUSES),
         BloodRequest.blood_group_required.in_(recipients),
     ).order_by(BloodRequest.created_at.desc())

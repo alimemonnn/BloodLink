@@ -5,12 +5,13 @@ from urllib.parse import urlparse
 from flask import (Blueprint, flash, redirect, render_template, request,
                    url_for)
 
-from models import (STATUS_APPROVED, BloodRequest, DonationResponse,
+from models import (RESP_COMPLETED, BloodRequest, DonationResponse,
                     Notification, db)
+from utils import allocation
 from utils.auth import current_user, role_required
 from utils.matching import BLOOD_GROUPS, requests_for_donor
 from utils.notifications import mark_all_read, notify_donor
-from utils.validators import (parse_date, validate_donor_form,
+from utils.validators import (checked, parse_date, validate_donor_form,
                               validate_password)
 
 donor_bp = Blueprint("donor", __name__, url_prefix="/donor")
@@ -33,7 +34,7 @@ def dashboard():
     )
     stats = {
         "responses": len(responses),
-        "completed": sum(1 for r in responses if r.response_status == "Donation Completed"),
+        "completed": sum(1 for r in responses if r.response_status == RESP_COMPLETED),
         "open_requests": requests_for_donor(donor, BloodRequest.query).count(),
         "unread": sum(1 for n in notifications if not n.is_read),
     }
@@ -72,32 +73,17 @@ def requests_feed():
 @donor_bp.route("/requests/<int:request_id>/respond", methods=["POST"])
 @role_required("donor")
 def respond(request_id):
+    """Offer to help. The tick box is the donor's consent to share contact details."""
     donor = current_user()
-    blood_request = BloodRequest.query.get_or_404(request_id)
-
-    if blood_request.status != STATUS_APPROVED:
-        flash("This request is no longer open for responses.", "warning")
+    BloodRequest.query.get_or_404(request_id)
+    try:
+        allocation.pledge(donor, request_id, units=1,
+                          consent_to_share=checked(request.form, "share_with_hospital"))
+    except allocation.AllocationError as err:
+        flash(str(err), "warning")
         return redirect(url_for("donor.requests_feed"))
-
-    if not donor.is_eligible:
-        flash(
-            f"You are not eligible yet. You can donate again in "
-            f"{donor.days_until_eligible} days.",
-            "warning",
-        )
-        return redirect(url_for("donor.requests_feed"))
-
-    existing = DonationResponse.query.filter_by(
-        donor_id=donor.id, request_id=request_id
-    ).first()
-    if existing:
-        flash("You have already responded to this request.", "warning")
-        return redirect(url_for("donor.requests_feed"))
-
-    db.session.add(DonationResponse(donor_id=donor.id, request_id=request_id,
-                                    response_status="Interested"))
-    db.session.commit()
-    flash("Thank you. The patient and hospital can now see your contact details.", "success")
+    flash("Thank you. The hospital and patient can now see your name and phone number. "
+          "Your offer is not a medical clearance: the hospital will confirm with you.", "success")
     return redirect(url_for("donor.history"))
 
 
@@ -113,27 +99,16 @@ def history():
     return render_template("donor/history.html", donor=donor, responses=responses)
 
 
-@donor_bp.route("/history/<int:response_id>/update", methods=["POST"])
+@donor_bp.route("/history/<int:response_id>/cancel", methods=["POST"])
 @role_required("donor")
-def update_response(response_id):
+def cancel_response(response_id):
+    """Donors can withdraw an offer. Only a hospital can record a completed donation."""
     donor = current_user()
-    response = DonationResponse.query.get_or_404(response_id)
-    if response.donor_id != donor.id:
-        flash("Unauthorized access.", "danger")
-        return redirect(url_for("donor.history"))
-
-    new_status = request.form.get("response_status", "")
-    if new_status not in ("Interested", "Contacted", "Donation Completed", "Cancelled"):
-        flash("Select a valid response status.", "danger")
-        return redirect(url_for("donor.history"))
-
-    response.response_status = new_status
-    if new_status == "Donation Completed":
-        response.donation_date = date.today()
-        donor.last_donation_date = date.today()
-        donor.refresh_eligibility()
-    db.session.commit()
-    flash("Response updated.", "success")
+    try:
+        allocation.cancel_response(response_id, "donor", donor.id)
+        flash("Your offer was cancelled.", "info")
+    except allocation.AllocationError as err:
+        flash(str(err), "warning")
     return redirect(url_for("donor.history"))
 
 

@@ -5,11 +5,12 @@ from flask import (Blueprint, current_app, flash, redirect, render_template,
                    request, session, url_for)
 
 from models import Admin, Donor, Hospital, Patient, db
-from utils import ratelimit
+from utils import privacy, ratelimit
 from utils.auth import (dashboard_endpoint, login_user, logout_user,
                         remember_next, take_next)
 from utils.matching import BLOOD_GROUPS
-from utils.validators import (parse_date, validate_donor_form,
+from utils.validators import (AVAILABILITY_OPTIONS, checked, parse_date,
+                              validate_account_consents, validate_donor_form,
                               validate_hospital_form, validate_patient_form)
 
 auth_bp = Blueprint("auth", __name__)
@@ -101,6 +102,9 @@ def register_donor():
     if request.method == "POST":
         form = request.form.to_dict()
         errors = validate_donor_form(form)
+        errors += validate_account_consents(form, "donor")
+        if form.get("availability") not in AVAILABILITY_OPTIONS:
+            errors.append("Please choose whether you are currently available.")
         if not errors and _email_taken(form.get("email", "")):
             errors.append("An account with this email already exists.")
 
@@ -108,6 +112,7 @@ def register_donor():
             for error in errors:
                 flash(error, "danger")
         else:
+            now = datetime.utcnow()
             donor = Donor(
                 name=form["name"].strip(),
                 email=form["email"].lower().strip(),
@@ -116,11 +121,22 @@ def register_donor():
                 city=form["city"].strip(),
                 area=form.get("area", "").strip(),
                 last_donation_date=parse_date(form.get("last_donation_date")),
-                availability=form.get("availability", "Available"),
+                availability=form["availability"],
+                share_contact_consent=checked(form, "share_contact_consent"),
+                email_opt_in=checked(form, "email_opt_in"),
+                terms_accepted_at=now, age_confirmed_at=now, health_data_consent_at=now,
+                policy_version=current_app.config["POLICY_VERSION"],
             )
             donor.set_password(form["password"])
             donor.refresh_eligibility()
             db.session.add(donor)
+            db.session.flush()
+            purposes = ["terms_privacy", "age_18", "health_data"]
+            if donor.share_contact_consent:
+                purposes.append("contact_sharing")
+            if donor.email_opt_in:
+                purposes.append("email_notifications")
+            privacy.record_consent("donor", donor.id, purposes)
             db.session.commit()
             destination = take_next()
             login_user(donor)
@@ -139,6 +155,7 @@ def register_patient():
     if request.method == "POST":
         form = request.form.to_dict()
         errors = validate_patient_form(form)
+        errors += validate_account_consents(form, "patient")
         if not errors and _email_taken(form.get("email", "")):
             errors.append("An account with this email already exists.")
 
@@ -151,10 +168,13 @@ def register_patient():
                 email=form["email"].lower().strip(),
                 phone=form["phone"].strip(),
                 city=form["city"].strip(),
-                address=form.get("address", "").strip(),
+                terms_accepted_at=datetime.utcnow(), age_confirmed_at=datetime.utcnow(),
+                policy_version=current_app.config["POLICY_VERSION"],
             )
             patient.set_password(form["password"])
             db.session.add(patient)
+            db.session.flush()
+            privacy.record_consent("patient", patient.id, ["terms_privacy", "age_18"])
             db.session.commit()
             destination = take_next()
             login_user(patient)
@@ -173,6 +193,7 @@ def register_hospital():
     if request.method == "POST":
         form = request.form.to_dict()
         errors = validate_hospital_form(form)
+        errors += validate_account_consents(form, "hospital")
         if not errors and _email_taken(form.get("email", "")):
             errors.append("An account with this email already exists.")
 
@@ -187,9 +208,13 @@ def register_hospital():
                 address=form["address"].strip(),
                 city=form["city"].strip(),
                 is_verified=False,   # admin must approve first
+                terms_accepted_at=datetime.utcnow(),
+                policy_version=current_app.config["POLICY_VERSION"],
             )
             hospital.set_password(form["password"])
             db.session.add(hospital)
+            db.session.flush()
+            privacy.record_consent("hospital", hospital.id, ["terms_privacy"])
             db.session.commit()
             flash(
                 "Hospital registered. An administrator will verify the account "

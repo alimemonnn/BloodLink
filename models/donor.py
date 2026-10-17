@@ -27,6 +27,16 @@ class Donor(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login_at = db.Column(db.DateTime, nullable=True)
 
+    # Consent and privacy (added in the compliance upgrade; all nullable/defaulted)
+    share_contact_consent = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+    email_opt_in = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+    terms_accepted_at = db.Column(db.DateTime)
+    age_confirmed_at = db.Column(db.DateTime)
+    health_data_consent_at = db.Column(db.DateTime)
+    policy_version = db.Column(db.String(20))
+    # Set only by a hospital after screening; matching skips the donor until then.
+    deferred_until = db.Column(db.Date)
+
     responses = db.relationship(
         "DonationResponse", backref="donor", lazy=True, cascade="all, delete-orphan"
     )
@@ -52,8 +62,11 @@ class Donor(db.Model):
     # ------------------------------------------------------------------
     @property
     def is_eligible(self):
-        """A donor is eligible if they have never donated, or if at least
-        three months have passed since their last donation."""
+        """Interval check ONLY: never donated, or the configured gap has passed.
+
+        This is a screening aid, not a medical decision. A hospital makes the
+        real eligibility decision (and may defer a donor via ``deferred_until``).
+        """
         if self.last_donation_date is None:
             return True
         return (date.today() - self.last_donation_date).days >= DONATION_GAP_DAYS
@@ -78,7 +91,9 @@ class Donor(db.Model):
     @property
     def is_matchable(self):
         """Only active, available and eligible donors take part in matching."""
-        return bool(self.is_active) and self.availability == "Available" and self.is_eligible
+        deferred = self.deferred_until is not None and self.deferred_until > date.today()
+        return (bool(self.is_active) and self.availability == "Available"
+                and self.is_eligible and not deferred)
 
     @property
     def completed_donations(self):

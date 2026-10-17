@@ -1,0 +1,17 @@
+{% extends "legal/_layout.html" %}
+{% block title %}Cookie policy{% endblock %}
+{% block legal_title %}Cookie policy{% endblock %}
+{% block legal_body %}
+<p class="lead">BloodLink uses two small first-party cookies. We do not use analytics, advertising or third-party cookies.</p>
+<div class="table-responsive"><table class="table">
+<thead><tr><th scope="col">Cookie</th><th scope="col">Purpose</th><th scope="col">Type</th><th scope="col">Lifetime</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>session</code></th><td>Keeps you logged in, holds the form-protection (CSRF) token and short status messages. Signed, HTTP-only, SameSite=Lax, and Secure on the live site.</td><td>Strictly necessary</td><td>Until you close the browser, or 8 hours after login.</td></tr>
+<tr><th scope="row"><code>bl_consent</code></th><td>Remembers that you saw the cookie notice and what you chose, so we do not ask again on every page.</td><td>Strictly necessary (stores your preference)</td><td>180 days</td></tr>
+</tbody></table></div>
+<h2>Your choices</h2>
+<p>Because every cookie we set is needed for the site to work, there are no optional cookies to switch on. You can still change your recorded choice at any time:
+<button type="button" class="btn btn-outline-navy btn-sm" data-cookie-settings>Open cookie settings</button></p>
+<p>You can also block or delete cookies in your browser. Logging in will then not work.</p>
+<p>If optional cookies are ever added, they will be off until you opt in, and this page will list them first.</p>
+{% endblock %}

@@ -66,12 +66,12 @@
   </div>
   {{ pagination(users, 'admin.users', filters) }}
   {% else %}
-  <div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i><p class="mb-0">No accounts match this search.</p></div>
+  <div class="empty-state"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><p class="mb-0">No accounts match this search.</p></div>
   {% endif %}
 </div>
 
 <p class="small text-muted mt-3">
-  <i class="fa-solid fa-shield-halved"></i>
+  <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
   Passwords are one-way hashed and cannot be retrieved or displayed by anyone, including administrators.
 </p>
 {% endblock %}

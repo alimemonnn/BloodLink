@@ -1,4 +1,5 @@
 {% extends "dashboard_base.html" %}
+{% from "account/_privacy_panel.html" import panel with context %}
 {% set active = 'profile' %}
 {% block title %}My profile{% endblock %}
 {% block dash_title %}My profile{% endblock %}
@@ -27,10 +28,6 @@
         <label class="form-label" for="city">City</label>
         <input class="form-control" id="city" name="city" value="{{ patient.city }}" required>
       </div>
-      <div class="col-12">
-        <label class="form-label" for="address">Address</label>
-        <input class="form-control" id="address" name="address" value="{{ patient.address or '' }}">
-      </div>
     </div>
     <button class="btn btn-blood mt-4" type="submit">Save changes</button>
   </form>
@@ -57,4 +54,5 @@
     <button class="btn btn-outline-navy mt-3" type="submit">Change password</button>
   </form>
 </div>
+{{ panel('patient') }}
 {% endblock %}

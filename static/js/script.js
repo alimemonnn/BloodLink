@@ -9,12 +9,7 @@
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
 
-  // Auto-hide flash messages after 6 seconds
-  document.querySelectorAll(".alert-dismissible").forEach(function (alert) {
-    setTimeout(function () {
-      if (window.bootstrap && bootstrap.Alert) { bootstrap.Alert.getOrCreateInstance(alert).close(); }
-    }, 6000);
-  });
+  // Flash messages stay until dismissed (WCAG 2.2.1: people need time to read them)
 
   // Ask before destructive actions (delete / cancel)
   document.querySelectorAll("form[data-confirm]").forEach(function (form) {
@@ -54,37 +49,19 @@
     input.setAttribute("max", today);
   });
 
-  // Count-up numbers (start when they scroll into view)
-  function countUp(el) {
-    var target = parseInt(el.getAttribute("data-count"), 10) || 0;
-    if (target === 0 || reduceMotion) { el.textContent = target; return; }
-    var start = null, duration = 1100;
-    function frame(ts) {
-      if (start === null) start = ts;
-      var p = Math.min((ts - start) / duration, 1);
-      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
-      if (p < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  }
-
-  // Reveal-on-scroll + counters
-  var counters = document.querySelectorAll("[data-count]");
+  // Reveal-on-scroll
   var reveals = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
         entry.target.classList.add("is-visible");
-        entry.target.querySelectorAll("[data-count]").forEach(countUp);
         io.unobserve(entry.target);
       });
     }, { threshold: 0.15 });
     reveals.forEach(function (el) { io.observe(el); });
-    counters.forEach(function (el) { if (!el.closest(".reveal")) io.observe(el.parentElement); });
   } else {
     reveals.forEach(function (el) { el.classList.add("is-visible"); });
-    counters.forEach(countUp);
   }
 
   // Blood group tiles: light follows the cursor

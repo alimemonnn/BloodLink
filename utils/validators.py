@@ -152,6 +152,8 @@ def validate_blood_request_form(form):
     _too_long(form, "location", 160, "Location", errors)
     _too_long(form, "contact_number", 30, "Contact number", errors)
     _too_long(form, "description", 2000, "Notes", errors)
+    if checked(form, "patient_is_minor") and not checked(form, "guardian_confirm"):
+        errors.append("For a patient under 18 the request must be made by a parent or legal guardian.")
 
     units = form.get("units_required", "")
     try:
@@ -160,4 +162,58 @@ def validate_blood_request_form(form):
             errors.append("Units required must be between 1 and 20.")
     except (TypeError, ValueError):
         errors.append("Units required must be a number.")
+    return errors
+
+
+# ----------------------------------------------------------------------
+# Consent and compliance forms
+# ----------------------------------------------------------------------
+def checked(form, name):
+    return form.get(name) in ("on", "1", "true", "yes")
+
+
+def validate_account_consents(form, role):
+    """Explicit, unticked-by-default consents required before an account exists."""
+    errors = []
+    if not checked(form, "accept_terms"):
+        errors.append("You must accept the Terms of Service and Privacy Policy to register.")
+    if role in ("donor", "patient") and not checked(form, "confirm_adult"):
+        errors.append("You must confirm that you are 18 or older to register.")
+    if role == "donor" and not checked(form, "health_consent"):
+        errors.append("We need your consent to store your blood group and donation date.")
+    return errors
+
+
+def validate_contact_form(form):
+    errors = []
+    if not form.get("name", "").strip():
+        errors.append("Please enter your name.")
+    if not form.get("message", "").strip():
+        errors.append("Please write a message.")
+    email = form.get("email", "").strip()
+    if email and not is_valid_email(email):
+        errors.append("Enter a valid email address or leave it empty.")
+    if not checked(form, "consent"):
+        errors.append("Please tick the box to let us store your message and reply to it.")
+    _too_long(form, "name", 120, "Name", errors)
+    _too_long(form, "email", 120, "Email", errors)
+    _too_long(form, "message", 3000, "Message", errors)
+    return errors
+
+
+DATA_REQUEST_KINDS = {"delete": "Delete my data", "access": "Get a copy of my data",
+                      "correct": "Correct my data"}
+
+
+def validate_data_request_form(form):
+    errors = []
+    if form.get("kind") not in DATA_REQUEST_KINDS:
+        errors.append("Choose what you would like us to do.")
+    if not is_valid_email(form.get("email", "")):
+        errors.append("Enter the email address of the account or message.")
+    if not checked(form, "consent"):
+        errors.append("Please tick the box to let us store this request while we handle it.")
+    _too_long(form, "name", 120, "Name", errors)
+    _too_long(form, "email", 120, "Email", errors)
+    _too_long(form, "details", 2000, "Details", errors)
     return errors

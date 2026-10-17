@@ -1,4 +1,5 @@
-<a href="{{ url_for('hospital.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-<a href="{{ url_for('hospital.requests_list') }}" class="{{ 'active' if active == 'requests' }}"><i class="fa-solid fa-clipboard-check"></i> Blood requests</a>
-<a href="{{ url_for('hospital.requests_list', status='Pending Hospital Approval') }}" class="{{ 'active' if active == 'pending' }}"><i class="fa-solid fa-hourglass-half"></i> Awaiting approval</a>
-<a href="{{ url_for('hospital.profile') }}" class="{{ 'active' if active == 'profile' }}"><i class="fa-regular fa-building"></i> Hospital profile</a>
+<a href="{{ url_for('hospital.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><i class="fa-solid fa-gauge" aria-hidden="true"></i> Dashboard</a>
+<a href="{{ url_for('hospital.requests_list') }}" class="{{ 'active' if active == 'requests' }}"><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> Blood requests</a>
+<a href="{{ url_for('hospital.requests_list', status='Pending Hospital Approval') }}" class="{{ 'active' if active == 'pending' }}"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> Awaiting approval</a>
+<a href="{{ url_for('chat.inbox') }}" class="{{ 'active' if active == 'messages' }}"><i class="fa-regular fa-comments" aria-hidden="true"></i> Messages {% if chat_unread %}<span class="nav-count" aria-label="{{ chat_unread }} conversation(s) with new messages">{{ chat_unread }}</span>{% endif %}</a>
+<a href="{{ url_for('hospital.profile') }}" class="{{ 'active' if active == 'profile' }}"><i class="fa-regular fa-building" aria-hidden="true"></i> Hospital profile</a>

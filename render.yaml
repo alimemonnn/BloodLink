@@ -6,7 +6,7 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --workers 2 --timeout 60
-    healthCheckPath: /
+    healthCheckPath: /healthz
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
@@ -17,4 +17,8 @@ services:
       - key: ADMIN_EMAIL         # first admin login (created automatically)
         sync: false
       - key: ADMIN_PASSWORD
+        sync: false
+      - key: BUSINESS_EMAIL      # shown in the footer and policies
+        sync: false
+      - key: PUBLIC_BASE_URL     # e.g. https://bloodlink.onrender.com (needed for email links)
         sync: false

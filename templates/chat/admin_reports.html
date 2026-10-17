@@ -1,0 +1,49 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'chat' %}
+{% block title %}Chat reports{% endblock %}
+{% block dash_title %}Chat reports{% endblock %}
+{% block dash_subtitle %}Conversations that a donor, patient or hospital flagged{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  <div class="d-flex gap-2 mb-3 flex-wrap">
+    {% for s in ['Open', 'Dismissed', chat_locked] %}
+    <a class="btn btn-sm {{ 'btn-blood' if status == s else 'btn-outline-navy' }}" href="{{ url_for('chat.admin_reports', status=s) }}">{{ s }}</a>
+    {% endfor %}
+  </div>
+  {% if reports %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <caption class="visually-hidden">Reported conversations</caption>
+      <thead><tr><th scope="col">#</th><th scope="col">Request</th><th scope="col">Reported by</th><th scope="col">Reason</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
+      <tbody>
+      {% for rep in reports %}
+      <tr>
+        <th scope="row">{{ rep.id }}<div class="small text-muted fw-normal">{{ rep.created_at.strftime('%d %b, %H:%M') }}</div></th>
+        <td><a href="{{ url_for('chat.thread', response_id=rep.response_id) }}">Request #{{ rep.response.request_id }}</a></td>
+        <td>{{ rep.reporter_role }}</td>
+        <td style="max-width: 22rem;">{{ rep.reason }}</td>
+        <td><span class="badge bg-{{ 'warning text-dark' if rep.status == 'Open' else 'secondary' }}">{{ rep.status }}</span>
+          {% if rep.admin_note %}<div class="small text-muted">{{ rep.admin_note }}</div>{% endif %}</td>
+        <td>
+          {% if rep.status == 'Open' %}
+          <form method="post" action="{{ url_for('chat.admin_resolve', report_id=rep.id) }}" class="d-grid gap-1" style="min-width: 12rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="visually-hidden" for="note{{ rep.id }}">Note</label>
+            <input class="form-control form-control-sm" id="note{{ rep.id }}" name="note" maxlength="255" placeholder="Note (optional)">
+            <button class="btn btn-sm btn-outline-danger" name="action" value="lock" type="submit">Lock thread</button>
+            <button class="btn btn-sm btn-outline-secondary" name="action" value="dismiss" type="submit">Dismiss</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="fa-regular fa-circle-check" aria-hidden="true"></i><p class="mb-0">No {{ status|lower }} reports.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

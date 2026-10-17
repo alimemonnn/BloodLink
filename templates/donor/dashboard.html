@@ -19,9 +19,9 @@
     <div>
       <h5 class="mb-1">Eligibility</h5>
       {% if donor.is_eligible %}
-        <p class="mb-0 text-success"><i class="fa-solid fa-circle-check"></i> You are eligible to donate today.</p>
+        <p class="mb-0 text-success"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> You are eligible to donate today.</p>
       {% else %}
-        <p class="mb-0 text-warning-emphasis"><i class="fa-solid fa-hourglass-half"></i>
+        <p class="mb-0 text-warning-emphasis"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>
           You donated on {{ donor.last_donation_date.strftime('%d %b %Y') }}. You can donate again on
           {{ donor.next_eligible_date.strftime('%d %b %Y') }} ({{ donor.days_until_eligible }} days).</p>
       {% endif %}
@@ -43,7 +43,7 @@
   {% if requests %}
   <div class="row g-3">{% for r in requests %}{{ request_card(r, show_contact=True) }}{% endfor %}</div>
   {% else %}
-  <div class="empty-state"><i class="fa-regular fa-face-smile"></i>
+  <div class="empty-state"><i class="fa-regular fa-face-smile" aria-hidden="true"></i>
     <p class="mb-0">No approved requests need your blood group right now. We will notify you when one arrives.</p></div>
   {% endif %}
 </div>

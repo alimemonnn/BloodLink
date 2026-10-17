@@ -2,7 +2,7 @@
 {% set active = 'history' %}
 {% block title %}My responses{% endblock %}
 {% block dash_title %}My responses and donations{% endblock %}
-{% block dash_subtitle %}Keep each response up to date so the hospital knows where things stand{% endblock %}
+{% block dash_subtitle %}Offers you made, and donations a hospital has verified{% endblock %}
 {% block sidenav %}{% include "donor/_nav.html" %}{% endblock %}
 
 {% block dash_content %}
@@ -10,35 +10,37 @@
   {% if responses %}
   <div class="table-responsive">
     <table class="table align-middle">
-      <thead><tr><th>Patient</th><th>Group</th><th>Hospital</th><th>Responded</th><th>Status</th><th>Update</th></tr></thead>
+      <caption class="visually-hidden">Your offers and verified donations</caption>
+      <thead><tr><th scope="col">Request</th><th scope="col">Group</th><th scope="col">Hospital</th><th scope="col">Offered</th><th scope="col">Status</th><th scope="col">Units</th><th scope="col"></th></tr></thead>
       <tbody>
       {% for resp in responses %}
         <tr>
-          <td><strong>{{ resp.request.patient_name }}</strong><div class="small text-muted">{{ resp.request.location }}</div></td>
+          <th scope="row">#{{ resp.request.id }}<div class="small text-muted fw-normal">{{ resp.request.location }}</div></th>
           <td><span class="blood-chip sm">{{ resp.request.blood_group_required }}</span></td>
-          <td>{{ resp.request.hospital.hospital_name }}<div class="small text-muted">{{ resp.request.contact_number }}</div></td>
-          <td class="text-nowrap">{{ resp.response_date.strftime('%d %b %Y') }}
-            {% if resp.donation_date %}<div class="small text-success">Donated {{ resp.donation_date.strftime('%d %b %Y') }}</div>{% endif %}</td>
-          <td><span class="badge bg-{{ resp.status_color }}">{{ resp.response_status }}</span></td>
-          <td>
-            <form method="post" action="{{ url_for('donor.update_response', response_id=resp.id) }}" class="d-flex gap-2">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <select class="form-select form-select-sm" name="response_status">
-                {% for s in ['Interested', 'Contacted', 'Donation Completed', 'Cancelled'] %}
-                <option value="{{ s }}" {{ 'selected' if resp.response_status == s }}>{{ s }}</option>
-                {% endfor %}
-              </select>
-              <button class="btn btn-sm btn-outline-navy" type="submit">Save</button>
+          <td>{{ resp.request.hospital.hospital_name }}</td>
+          <td class="text-nowrap">{{ resp.response_date.strftime('%d %b %Y') }}</td>
+          <td><span class="badge bg-{{ resp.status_color }}">{{ resp.response_status }}</span>
+            {% if resp.appointment_at and resp.is_active %}<div class="small">Appointment {{ resp.appointment_at.strftime('%d %b, %H:%M') }}</div>{% endif %}
+            {% if resp.verified_at %}<div class="small text-success">Verified {{ resp.verified_at.strftime('%d %b %Y') }}</div>{% endif %}
+            {% if resp.hospital_note %}<div class="small text-muted">{{ resp.hospital_note }}</div>{% endif %}</td>
+          <td>{% if resp.response_status == 'Donation Completed' %}{{ resp.units_collected }} collected{% elif resp.is_active %}{{ resp.units_pledged }} pledged{% else %}-{% endif %}</td>
+          <td class="d-grid gap-1" style="min-width: 8rem;">
+            <a class="btn btn-sm btn-outline-navy" href="{{ url_for('chat.thread', response_id=resp.id) }}"><i class="fa-regular fa-comments me-1" aria-hidden="true"></i>Chat</a>
+            {% if resp.is_active %}
+            <form method="post" action="{{ url_for('donor.cancel_response', response_id=resp.id) }}" data-confirm="Cancel your offer for this request?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-outline-danger" type="submit">Cancel offer</button>
             </form>
+            {% endif %}
           </td>
         </tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
-  <p class="small text-muted mb-0">Marking a response as "Donation Completed" records today as your last donation date and pauses your eligibility for three months.</p>
+  <p class="small text-muted mb-0">A donation counts only after a hospital verifies it. You cannot mark it yourself. Verified donations start your usual rest period.</p>
   {% else %}
-  <div class="empty-state"><i class="fa-regular fa-hand"></i>
+  <div class="empty-state"><i class="fa-regular fa-hand" aria-hidden="true"></i>
     <p>You have not responded to any request yet.</p>
     <a class="btn btn-blood" href="{{ url_for('donor.requests_feed') }}">See open requests</a></div>
   {% endif %}

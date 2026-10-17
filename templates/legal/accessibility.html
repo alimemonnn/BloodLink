@@ -1,0 +1,18 @@
+{% extends "legal/_layout.html" %}
+{% block title %}Accessibility{% endblock %}
+{% block legal_title %}Accessibility statement{% endblock %}
+{% block legal_body %}
+<p class="lead">We want everyone, including people using screen readers, keyboards or magnification, to be able to use BloodLink. We aim for WCAG 2.2 level AA.</p>
+<h2>What we do</h2>
+<ul>
+<li>A &ldquo;Skip to main content&rdquo; link and a visible focus outline on every control; the whole site works with a keyboard.</li>
+<li>Text and interface colours are checked against the 4.5:1 and 3:1 contrast ratios by an automated test.</li>
+<li>Icons that only decorate are hidden from screen readers; icon-only buttons have text labels. The site has no photographs; the logo is an original vector drawing.</li>
+<li>Charts have a text alternative and a data table.</li>
+<li>Progress bars announce &ldquo;x of y units confirmed&rdquo;.</li>
+<li>No auto-scrolling or flashing content; animations stop when your system asks for reduced motion.</li>
+<li>Status and error messages are announced to screen readers and do not disappear on their own.</li>
+</ul>
+<h2>Known limits</h2>
+<p>This is a student project and has not been audited by an external accessibility specialist. If you meet a barrier, <a href="{{ url_for('public.contact') }}">tell us</a> and we will try to fix it.</p>
+{% endblock %}
