@@ -7,14 +7,9 @@ The database is chosen from the environment:
 
 That is the only thing that changes between your laptop and the live site.
 """
-
 import os
-from dotenv import load_dotenv
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-
-# Load local development variables without overriding system variables.
-load_dotenv(os.path.join(BASE_DIR, ".env.local"))
 
 # Render sets RENDER=true. You can also set BLOODLINK_ENV=production yourself.
 IS_PRODUCTION = (
