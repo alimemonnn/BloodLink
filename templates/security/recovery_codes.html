@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Your recovery codes{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 640px;">
+  <h1>Save your recovery codes</h1>
+  <div class="alert alert-warning">Each code works once if you lose your phone. They are shown <strong>only now</strong>. Store them somewhere safe.</div>
+  <div class="panel"><ul class="list-unstyled mb-3 recovery-grid">{% for c in codes %}<li><code>{{ c }}</code></li>{% endfor %}</ul>
+    <a class="btn btn-blood" href="{{ url_for('security.settings') }}">I have saved them</a></div>
+</div></section>
+{% endblock %}

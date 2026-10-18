@@ -1,0 +1,7 @@
+<a href="{{ url_for('donor.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><i class="fa-solid fa-gauge" aria-hidden="true"></i> Dashboard</a>
+<a href="{{ url_for('donor.requests_feed') }}" class="{{ 'active' if active == 'requests' }}"><i class="fa-solid fa-droplet" aria-hidden="true"></i> Blood requests</a>
+<a href="{{ url_for('donor.history') }}" class="{{ 'active' if active == 'history' }}"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> My responses</a>
+<a href="{{ url_for('donor.notifications') }}" class="{{ 'active' if active == 'notifications' }}"><i class="fa-regular fa-bell" aria-hidden="true"></i> Notifications</a>
+<a href="{{ url_for('community.camps') }}" class="{{ 'active' if active == 'camps' }}"><i class="fa-solid fa-tent" aria-hidden="true"></i> Donation camps</a>
+<a href="{{ url_for('chat.inbox') }}" class="{{ 'active' if active == 'messages' }}"><i class="fa-regular fa-comments" aria-hidden="true"></i> Messages {% if chat_unread %}<span class="nav-count" aria-label="{{ chat_unread }} conversation(s) with new messages">{{ chat_unread }}</span>{% endif %}</a>
+<a href="{{ url_for('donor.profile') }}" class="{{ 'active' if active == 'profile' }}"><i class="fa-regular fa-user" aria-hidden="true"></i> My profile</a>

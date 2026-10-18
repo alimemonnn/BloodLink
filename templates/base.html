@@ -1,0 +1,155 @@
+{% from "_ui.html" import logo %}
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ lang_dir }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#3a0815">
+  <title>{% block title %}BloodLink{% endblock %} &middot; BloodLink</title>
+  <meta name="description" content="BloodLink connects patients, hospitals and willing donors through a blood donation network where hospitals review every request.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2.5C16 2.5 5.5 13.2 5.5 20.2a10.5 10.5 0 0 0 21 0C26.5 13.2 16 2.5 16 2.5Z' fill='%23c8102e'/%3E%3C/svg%3E">
+  <link rel="manifest" href="{{ url_for('engage.manifest') }}">
+  <meta name="theme-color" content="#c8102e">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/pwa/icon-192.png') }}">
+  <script src="{{ url_for('static', filename='js/boot.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+{% set ep = request.endpoint or '' %}
+<header class="bl-header" id="siteHeader">
+  <nav class="navbar navbar-expand-lg bl-navbar" aria-label="Main">
+    <div class="container">
+      <a class="bl-brand" href="{{ url_for('public.index') }}" aria-label="BloodLink home">{{ logo() }}<span>Blood<b>Link</b></span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav mx-auto align-items-lg-center">
+          <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'public.index' }}" href="{{ url_for('public.index') }}">{{ t('nav.home') }}</a></li>
+          <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'public.find_blood' }}" href="{{ url_for('public.find_blood') }}">{{ t('nav.find_donor') }}</a></li>
+          <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'public.emergency' }}" href="{{ url_for('public.emergency') }}">{{ t('nav.emergency') }}</a></li>
+          <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'public.how_it_works' }}" href="{{ url_for('public.how_it_works') }}">{{ t('nav.how') }}</a></li>
+          <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'public.about' }}" href="{{ url_for('public.about') }}">{{ t('nav.about') }}</a></li>
+        </ul>
+        <div class="nav-actions">
+          {% if current_user %}
+            {% if current_role == 'donor' %}
+            <a class="nav-bell" href="{{ url_for('donor.notifications') }}">
+              <i class="fa-regular fa-bell" aria-hidden="true"></i>
+              <span class="visually-hidden">Notifications</span>
+              {% if unread_notifications %}<span class="badge rounded-pill bg-danger">{{ unread_notifications }}<span class="visually-hidden"> unread</span></span>{% endif %}
+            </a>
+            {% endif %}
+            <div class="dropdown">
+              <button class="avatar-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="avatar" aria-hidden="true">{{ current_user.name[:1]|upper }}</span>
+                <span class="d-none d-sm-inline">{{ current_user.name.split(' ')[0] }}</span>
+                <span class="visually-hidden"> account menu</span>
+                <i class="fa-solid fa-chevron-down small text-muted" aria-hidden="true"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for(dashboard_url) }}"><i class="fa-solid fa-gauge" aria-hidden="true"></i> {{ t('nav.dashboard') }}</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('security.settings') }}"><i class="fa-solid fa-lock" aria-hidden="true"></i> {{ t('nav.security') }}</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <form method="post" action="{{ url_for('auth.logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="dropdown-item" type="submit"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> {{ t('nav.logout') }}</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          {% else %}
+            <a class="btn btn-sm text-dark fw-semibold" href="{{ url_for('auth.login') }}">{{ t('nav.login') }}</a>
+            <a class="btn btn-blood btn-sm" href="{{ url_for('auth.register') }}">{{ t('nav.register') }}</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<div class="container flash-area">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="{{ 'alert' if category in ('danger', 'warning') else 'status' }}">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
+<main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
+
+{% include "_cookie_banner.html" %}
+
+<footer class="bl-footer">
+  <div class="container">
+    <div class="row gy-4">
+      <div class="col-lg-5">
+        <a class="bl-brand" href="{{ url_for('public.index') }}">{{ logo() }}<span>Blood<b>Link</b></span></a>
+        <p class="mb-0" style="max-width: 26rem;">A blood donation network where hospitals review each request before donors see it. Free to use. No one is ever paid for blood.</p>
+        <address class="biz small mt-3 mb-0">
+          <strong>{{ business.name }}</strong><br>
+          Operated by {{ business.operator }}<br>
+          {{ business.address }}<br>
+          {% if business.email %}<a class="fl d-inline" href="mailto:{{ business.email }}">{{ business.email }}</a><br>{% endif %}
+          {% if business.phone %}{{ business.phone }}<br>{% endif %}
+          {% if business.registration %}Registration: {{ business.registration }}<br>{% endif %}
+          <a class="fl d-inline" href="{{ url_for('public.contact') }}">Contact form</a>
+        </address>
+      </div>
+      <div class="col-6 col-lg-2">
+        <h2 class="h6">Explore</h2>
+        <a class="fl" href="{{ url_for('public.find_blood') }}">Find a donor</a>
+        <a class="fl" href="{{ url_for('public.emergency') }}">Emergency requests</a>
+        <a class="fl" href="{{ url_for('public.how_it_works') }}">How it works</a>
+        <a class="fl" href="{{ url_for('public.contact') }}">Contact us</a>
+      </div>
+      <div class="col-6 col-lg-2">
+        <h2 class="h6">Join in</h2>
+        <a class="fl" href="{{ url_for('auth.register_donor') }}">Register as a donor</a>
+        <a class="fl" href="{{ url_for('auth.register_patient') }}">Request blood</a>
+        <a class="fl" href="{{ url_for('auth.register_hospital') }}">Register a hospital</a>
+      </div>
+      <div class="col-12 col-lg-3">
+        <h2 class="h6">Legal and privacy</h2>
+        <a class="fl" href="{{ url_for('legal.privacy_policy') }}">Privacy policy</a>
+        <a class="fl" href="{{ url_for('legal.terms') }}">Terms of service</a>
+        <a class="fl" href="{{ url_for('legal.refund_policy') }}">Refund policy</a>
+        <a class="fl" href="{{ url_for('legal.cookies') }}">Cookie policy</a>
+        <a class="fl" href="{{ url_for('trust.verify') }}">{{ t('nav.verify') }}</a>
+        <a class="fl" href="{{ url_for('community.public_stock') }}">{{ t('nav.stock') }}</a>
+        <a class="fl" href="{{ url_for('community.camps') }}">{{ t('nav.camps') }}</a>
+        <form method="post" action="{{ url_for('set_language') }}" class="lang-switch d-inline-flex align-items-center gap-1" aria-label="{{ t('common.language') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% for code, (label, _d) in languages.items() %}<button class="fl btn-link-footer {{ 'fw-bold' if code == lang }}" name="lang" value="{{ code }}" type="submit" lang="{{ code }}" {{ 'aria-current=true' if code == lang }}>{{ label }}</button>{% endfor %}
+        </form>
+        <button class="fl btn-link-footer" type="button" data-cookie-settings>Cookie settings</button>
+        <a class="fl" href="{{ url_for('legal.data_request') }}">Delete or access my data</a>
+        <a class="fl" href="{{ url_for('legal.accessibility') }}">Accessibility</a>
+        <a class="fl" href="{{ url_for('legal.licenses') }}">Open-source licences</a>
+      </div>
+    </div>
+    <hr>
+    <div class="d-flex flex-wrap justify-content-between gap-2 small">
+      <span>&copy; {{ now.year }} {{ business.name }} &middot; University project, not a medical service</span>
+      <a class="muted-link" href="{{ url_for('auth.login', role='admin') }}">Staff login</a>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.js') }}"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script src="{{ url_for('static', filename='js/consent.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

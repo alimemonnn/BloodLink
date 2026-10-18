@@ -1,0 +1,137 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'messages' if not is_admin else 'chat' %}
+{% block title %}Conversation about request #{{ resp.request.id }}{% endblock %}
+{% block dash_title %}Conversation &middot; Request #{{ resp.request.id }}{% endblock %}
+{% block dash_subtitle %}{{ resp.request.blood_group_required }} &middot; {{ resp.request.hospital.hospital_name }}, {{ resp.request.location }}{% endblock %}
+{% block dash_class %}chat-page{% endblock %}
+{% block sidenav %}{% include base_nav %}{% endblock %}
+
+{% macro msg(m) %}
+{% if m.kind == 'event' %}
+<div class="chat-event" data-id="{{ m.id }}"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> {{ m.body }} <time datetime="{{ m.iso }}">{{ m.at }}</time></div>
+{% else %}
+<div class="chat-msg {{ 'mine' if m.mine else 'theirs' }} role-{{ m.role }}" data-id="{{ m.id }}">
+  <div class="chat-meta"><strong>{{ m.name }}</strong> <time datetime="{{ m.iso }}">{{ m.at }}</time></div>
+  {% if m.kind == 'location' %}
+  <div class="chat-loc"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> <strong>Shared a location</strong>{% if m.location.accuracy %} (about {{ m.location.accuracy }} m){% endif %}
+    {% if m.location.state == 'ok' %}
+    <div class="chat-loc-links"><a href="{{ m.location.google }}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a> &middot; <a href="{{ m.location.osm }}" target="_blank" rel="noopener noreferrer">OpenStreetMap</a></div>
+    {% elif m.location.state == 'admin' %}<div class="small">Location hidden for administrators.</div>
+    {% else %}<div class="small">Location no longer shown. Shared locations are hidden after {{ m.location.hours }} hours.</div>{% endif %}
+  </div>
+  {% else %}<div class="chat-body" dir="auto">{{ m.body }}</div>
+  {% if m.flag %}<div class="chat-flag small" role="note"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {% if m.mine %}Your message mentions money or an outside link, so administrators were asked to review it. Blood must never be bought or sold.{% else %}This message mentions money or an outside link. BloodLink is free; do not send money or share account details.{% endif %}</div>{% endif %}
+  {% if ai_enabled %}<div class="chat-translate small" data-msg="{{ m.id }}"><span class="text-muted">Translate:</span>
+    <button type="button" class="btn btn-link btn-sm p-0" data-lang="en">English</button>
+    <button type="button" class="btn btn-link btn-sm p-0" data-lang="ur" lang="ur">اردو</button>
+    <button type="button" class="btn btn-link btn-sm p-0" data-lang="sd" lang="sd">سنڌي</button></div>{% endif %}
+  {% endif %}
+</div>
+{% endif %}
+{% endmacro %}
+
+{% block dash_content %}
+<div class="panel chat-panel">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <div>
+      <span class="badge bg-{{ resp.status_color }}">Offer: {{ resp.response_status }}</span>
+      <span class="badge bg-{{ resp.request.status_color }}">Request: {{ resp.request.status_label }}</span>
+    </div>
+    <div class="small">
+      {% if role == 'donor' %}<a href="{{ url_for('donor.history') }}">My responses</a>
+      {% elif role == 'patient' %}<a href="{{ url_for('patient.request_detail', request_id=resp.request.id) }}">Request details</a>
+      {% elif role == 'hospital' %}<a href="{{ url_for('hospital.request_detail', request_id=resp.request.id) }}">Request details</a>
+      {% else %}<a href="{{ url_for('chat.admin_reports') }}">Back to reports</a>{% endif %}
+      &middot; <a href="{{ url_for('chat.inbox') if not is_admin else url_for('chat.admin_reports') }}">{{ 'All messages' if not is_admin else 'Report queue' }}</a>
+    </div>
+  </div>
+  <section class="plan-card" id="plan" aria-label="Donation plan">
+    <div class="plan-title"><i class="fa-solid fa-hospital" aria-hidden="true"></i> {{ plan.hospital }}</div>
+    <div class="small text-muted mb-2">{{ plan.address }}{% if plan.phone %} &middot; {{ plan.phone }}{% endif %}</div>
+    <dl class="plan-grid">
+      <div><dt>Appointment</dt><dd id="planAppt">{{ plan.appointment or 'Not scheduled yet. The hospital will set a time.' }}</dd></div>
+      <div><dt>Your offer</dt><dd id="planStatus">{{ plan.status }}</dd></div>
+    </dl>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-sm btn-outline-navy" href="{{ plan.directions }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-diamond-turn-right me-1" aria-hidden="true"></i>Directions</a>
+      {% if role == 'donor' and resp.is_active and resp.appointment_at %}<a class="btn btn-sm btn-outline-navy" href="{{ url_for('trust.donor_checkin', response_id=resp.id) }}"><i class="fa-solid fa-qrcode me-1" aria-hidden="true"></i>Check-in code</a>{% endif %}
+      <a id="planIcs" class="btn btn-sm btn-outline-navy" href="{{ url_for('chat.appointment_ics', response_id=resp.id) }}" {% if not plan.appointment or is_admin %}hidden{% endif %}><i class="fa-regular fa-calendar-plus me-1" aria-hidden="true"></i>Add to calendar</a>
+    </div>
+    <p class="small text-muted mt-2 mb-0">Bring a photo ID. The hospital decides eligibility and will tell you how to prepare.</p>
+  </section>
+
+  <p class="chat-note small mb-3"><i class="fa-solid fa-shield-heart me-1" aria-hidden="true"></i>
+    Conversation between {{ resp.donor.name }} (donor), the patient's family and {{ resp.request.hospital.hospital_name }}.
+    BloodLink is free and never asks for money, and blood must never be bought or sold. Don't share ID numbers or passwords.
+    A donation is counted only when the hospital confirms it.</p>
+
+  <div id="chat" class="chat" data-poll-url="{{ url_for('chat.poll', response_id=resp.id) }}"
+       data-send-url="{{ url_for('chat.send', response_id=resp.id) }}"
+       data-location-url="{{ url_for('chat.share_location', response_id=resp.id) if can_share_location else '' }}"
+       data-ai="{{ 'true' if ai_enabled else 'false' }}" data-translate-url="{{ url_for('chat.translate', response_id=resp.id) }}"
+       data-last-id="{{ last_id }}" data-can-post="{{ 'true' if can_post else 'false' }}">
+    <div id="chatLog" class="chat-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Messages" tabindex="0">
+      {% for m in messages %}{{ msg(m) }}{% endfor %}
+      <p id="chatEmpty" class="chat-empty text-muted" {% if messages %}hidden{% endif %}>No messages yet. Introduce yourself and agree a time and place with the hospital.</p>
+      <span id="end"></span>
+    </div>
+
+    <p id="chatError" class="alert alert-warning py-2 small mb-2" role="alert" hidden></p>
+
+    {% if can_post and (quick or can_share_location) %}
+    <div class="chat-tools">
+      {% if quick %}
+      <form id="quickForm" method="post" action="{{ url_for('chat.send', response_id=resp.id) }}" class="chat-quick" aria-label="Quick replies">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% for q in quick %}<button class="btn btn-sm btn-soft" type="submit" name="body" value="{{ q }}">{{ q }}</button>{% endfor %}
+      </form>
+      {% endif %}
+      {% if can_share_location %}
+      <button type="button" id="locBtn" class="btn btn-sm btn-outline-navy" hidden><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>{{ t('chat.share_location') }}</button>
+      <div id="locConfirm" class="loc-confirm" role="group" aria-labelledby="locConfirmTitle" hidden>
+        <strong id="locConfirmTitle">Send your current location once?</strong>
+        <p class="small mb-2">The donor, the patient's family and the hospital in this conversation will see it. Only this one position is sent. Nothing is tracked, it stops being shown after {{ location_hours }} hours, and it is erased after a day.</p>
+        <button type="button" id="locSend" class="btn btn-sm btn-blood">Send my location</button>
+        <button type="button" id="locCancel" class="btn btn-sm btn-outline-secondary">Cancel</button>
+      </div>
+      <p id="locStatus" class="small text-muted mb-0" role="status" hidden></p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if can_post %}
+    <form id="chatForm" method="post" action="{{ url_for('chat.send', response_id=resp.id) }}" class="chat-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="visually-hidden" for="chatBody">Your message</label>
+      <textarea id="chatBody" name="body" class="form-control" dir="auto" rows="2" maxlength="{{ max_len }}" required
+                placeholder="{{ t('chat.write') }} (Enter / Shift+Enter)"></textarea>
+      <div class="chat-form-row">
+        <span class="small text-muted"><span id="chatCount">0</span>/{{ max_len }}</span>
+        <button class="btn btn-blood" type="submit"><i class="fa-solid fa-paper-plane me-1" aria-hidden="true"></i>{{ t('common.send') }}</button>
+      </div>
+    </form>
+    {% else %}
+    <p id="chatClosed" class="alert alert-secondary small mb-0">{{ closed_note or ('Administrators can read this conversation because it was reported.' if is_admin else 'This conversation is read-only.') }}</p>
+    {% endif %}
+  </div>
+
+  {% if not is_admin %}
+  <details class="mt-3 chat-report">
+    <summary class="small text-muted"><i class="fa-regular fa-flag me-1" aria-hidden="true"></i>{{ t('chat.report') }}</summary>
+    <form method="post" action="{{ url_for('chat.report', response_id=resp.id) }}" class="mt-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label small" for="reportReason">What went wrong? (asking for money, abuse, spam ...)</label>
+      <input class="form-control form-control-sm mb-2" id="reportReason" name="reason" maxlength="300" required minlength="5">
+      <button class="btn btn-sm btn-outline-danger" type="submit">Send report to administrators</button>
+    </form>
+  </details>
+  {% endif %}
+
+  {% if is_admin and my_reports %}
+  <h2 class="h6 mt-4">Reports on this conversation</h2>
+  <ul class="small">{% for rep in my_reports %}<li>#{{ rep.id }} from {{ rep.reporter_role }}: {{ rep.reason }} <span class="badge bg-secondary">{{ rep.status }}</span></li>{% endfor %}</ul>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>{% endblock %}

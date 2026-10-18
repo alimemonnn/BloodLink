@@ -1,0 +1,20 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'stock' %}
+{% block title %}Blood stock{% endblock %}
+{% block dash_title %}Blood stock{% endblock %}
+{% block dash_subtitle %}Tell the public how many units you hold. Update it whenever it changes.{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+{% block dash_content %}
+<div class="panel">
+  <form method="post" novalidate><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      {% for g in groups %}{% set row = rows.get(g) %}
+      <div class="col-6 col-md-3"><label class="form-label" for="u{{ loop.index }}">{{ g }} <span class="small text-muted">{{ ago(row.updated_at) if row else '' }}</span></label>
+        <input class="form-control" id="u{{ loop.index }}" name="units_{{ g }}" inputmode="numeric" pattern="[0-9]*" maxlength="4" value="{{ row.units if row else '' }}" placeholder="0"></div>
+      {% endfor %}
+    </div>
+    <p class="small text-muted mt-3">Shown publicly as self-reported by your hospital. Leave a box empty to leave that group unchanged.</p>
+    <button class="btn btn-blood" type="submit">Save stock</button>
+  </form>
+</div>
+{% endblock %}

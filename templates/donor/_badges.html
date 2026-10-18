@@ -1,0 +1,10 @@
+{% set b = badge_summary %}
+<div class="panel mb-3" id="badges">
+  <h2 class="h6 mb-2"><i class="fa-solid fa-award me-1 text-danger" aria-hidden="true"></i> Your donations</h2>
+  <p class="mb-2"><strong>{{ b.donations }}</strong> confirmed donation{{ 's' if b.donations != 1 }} &middot; <strong>{{ b.units }}</strong> unit{{ 's' if b.units != 1 }}{% if b.streak > 1 %} &middot; <i class="fa-solid fa-fire text-danger" aria-hidden="true"></i> <strong>{{ b.streak }}</strong> in a row (each within a year){% endif %}</p>
+  <p class="mb-3 small">{% if b.can_donate_now %}<span class="badge bg-success">You can donate again now</span>{% else %}You can donate again in <strong>{{ b.days_left }} day{{ 's' if b.days_left != 1 }}</strong> ({{ b.next_eligible.strftime('%d %b %Y') }}).{% endif %}</p>
+  <ul class="list-inline mb-0 badge-row">
+    {% for x in b.badges + b.extra %}<li class="list-inline-item mb-1"><span class="badge {{ 'bg-success' if x.earned else 'bg-light text-muted border' }}" {% if x.hint %}title="{{ x.hint }}"{% endif %}><i class="fa-solid {{ x.icon }} me-1" aria-hidden="true"></i>{{ x.name }}{% if not x.earned %}<span class="visually-hidden"> (not earned yet)</span>{% endif %}</span></li>{% endfor %}
+  </ul>
+  <p class="small text-muted mt-2 mb-0">Badges count only donations a hospital confirmed.</p>
+</div>

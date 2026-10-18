@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env
+# local databases must never be committed
+*.db
+*.sqlite3
+instance/
+*.bak
+*.db-journal
+test_database.db
+.pytest_cache/

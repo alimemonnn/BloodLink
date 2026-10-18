@@ -1,0 +1,33 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'checkin' %}
+{% block title %}Donor check-in{% endblock %}
+{% block dash_title %}Donor check-in{% endblock %}
+{% block dash_subtitle %}Scan the donor's QR code or type the short code{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+{% block dash_content %}
+<div class="panel mb-3">
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end" action="{{ url_for('trust.checkin_scan') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="flex-grow-1"><label class="form-label" for="code">Check-in code</label>
+      <input class="form-control" id="code" name="code" value="{{ code }}" placeholder="e.g. 17-4F2A9C" autocomplete="off" autofocus></div>
+    <button class="btn btn-blood" type="submit">Find donor</button>
+    <button class="btn btn-outline-navy" type="button" id="scanBtn" hidden><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Scan QR with camera</button>
+  </form>
+  <div id="scanBox" hidden class="mt-3"><video id="scanVideo" playsinline muted class="w-100" style="max-width:420px;border-radius:12px"></video>
+    <p class="small text-muted mb-0" id="scanNote" role="status"></p></div>
+</div>
+{% if resp %}
+<div class="panel">
+  <h2 class="h5">{{ resp.donor.name }} <span class="badge bg-secondary">{{ resp.donor.blood_group }}</span></h2>
+  <p class="mb-1">Request #{{ resp.request_id }} needs {{ resp.request.blood_group_required }} &middot; offer: {{ resp.response_status }}</p>
+  <p class="text-muted">Appointment: {{ resp.appointment_at.strftime('%A %d %b %Y, %H:%M') if resp.appointment_at else 'not set' }}</p>
+  {% if already %}<div class="alert alert-info">Checked in at {{ resp.checked_in_at.strftime('%H:%M') }} (UTC).</div>
+  {% elif can_check_in %}
+  <form method="post" action="{{ url_for('trust.mark_arrived', response_id=resp.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-blood" type="submit"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Confirm arrival</button></form>
+  {% else %}<div class="alert alert-warning">This offer is {{ resp.response_status|lower }} and cannot be checked in.</div>{% endif %}
+  <p class="small text-muted mt-3 mb-0">Arrival is not a donation. After blood is collected, open <a href="{{ url_for('hospital.request_detail', request_id=resp.request_id) }}">the request</a> and use Confirm donation.</p>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/scan.js') }}" defer></script>{% endblock %}

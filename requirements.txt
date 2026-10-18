@@ -1,0 +1,15 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.1.0
+SQLAlchemy==2.0.30
+Werkzeug==3.0.3
+gunicorn==22.0.0
+psycopg2-binary>=2.9.10
+itsdangerous>=2.2.0
+cryptography>=43.0
+segno==1.6.6
+reportlab>=4.2
+# Optional services: imported only when the matching environment variable is set
+redis>=5.0
+sentry-sdk>=2.0
+pywebpush>=2.0

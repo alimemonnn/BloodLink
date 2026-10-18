@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Turn on two-factor login{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 640px;">
+  <h1>Turn on two-factor login</h1>
+  <div class="panel">
+    <ol>
+      <li>Open an authenticator app (Google Authenticator, Microsoft Authenticator, Aegis ...).</li>
+      <li>Scan this code, or type the key by hand.</li>
+      <li>Enter the 6-digit code it shows.</li>
+    </ol>
+    <p><img src="{{ qr }}" width="200" height="200" alt="QR code for your authenticator app"></p>
+    <p class="small">Key: <code>{{ secret }}</code></p>
+    <form method="post" action="{{ url_for('security.enable_2fa') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="code">6-digit code</label>
+      <input class="form-control mb-3" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" required>
+      <button class="btn btn-blood" type="submit">Confirm and turn on</button>
+      <a class="btn btn-link" href="{{ url_for('security.settings') }}">Cancel</a>
+    </form>
+  </div>
+</div></section>
+{% endblock %}

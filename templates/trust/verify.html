@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Verify a donation certificate{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 640px;">
+  <h1>Verify a certificate</h1>
+  <p class="lead">Enter the code printed on a BloodLink donation certificate to check that it is genuine.</p>
+  <div class="panel mb-3">
+    <form method="post" action="{{ url_for('trust.verify') }}" class="d-flex gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="visually-hidden" for="code">Certificate code</label>
+      <input class="form-control" id="code" name="code" value="{{ code }}" placeholder="BL-00017-AB12CD34" autocomplete="off">
+      <button class="btn btn-blood" type="submit">Verify</button></form>
+  </div>
+  {% if checked %}
+    {% if resp %}
+    <div class="alert alert-success" role="status"><strong>Genuine.</strong> {{ who }} donated {{ resp.units_collected }} unit{{ 's' if resp.units_collected != 1 }} of blood, confirmed by {{ resp.request.hospital.hospital_name }} on {{ resp.verified_at.strftime('%d %B %Y') if resp.verified_at else 'a recorded date' }}.</div>
+    <p class="small text-muted">Only the first name and an initial are shown, for privacy.</p>
+    {% else %}
+    <div class="alert alert-danger" role="alert">This code is not valid. Check it for typing mistakes.</div>
+    {% endif %}
+  {% endif %}
+</div></section>
+{% endblock %}

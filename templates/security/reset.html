@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Choose a new password{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 520px;">
+  <h1>Choose a new password</h1>
+  <div class="panel">
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="password">New password</label>
+      <input class="form-control mb-3" id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+      <label class="form-label" for="confirm_password">Confirm new password</label>
+      <input class="form-control mb-3" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
+      <button class="btn btn-blood" type="submit">Change password</button>
+    </form>
+  </div>
+</div></section>
+{% endblock %}

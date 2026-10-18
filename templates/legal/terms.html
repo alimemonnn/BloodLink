@@ -1,0 +1,50 @@
+{% extends "legal/_layout.html" %}
+{% block title %}Terms of service{% endblock %}
+{% block legal_title %}Terms of service{% endblock %}
+{% block legal_body %}
+<p class="lead">By creating an account or using BloodLink you agree to these terms and to the <a href="{{ url_for('legal.privacy_policy') }}">privacy policy</a>. If you do not agree, please do not use the service.</p>
+
+<h2 id="what">1. What BloodLink is, and is not</h2>
+<p>BloodLink helps patients, hospitals and volunteer donors find each other. It is a university project operated by {{ business.operator }}.</p>
+<ul>
+<li>BloodLink is <strong>not</strong> a hospital, blood bank, ambulance or emergency service, and does not give medical advice. <strong>In a life-threatening emergency go to the nearest hospital or call your local emergency number.</strong></li>
+<li>Blood-group compatibility shown on the site is general information for red-cell donation. A hospital must always perform screening, testing and crossmatching.</li>
+<li>A donor saying &ldquo;I can donate&rdquo; is willingness only. It is not a medical clearance. Only a hospital can decide a donor is suitable and confirm a donation.</li>
+<li>We do not promise that a donor will be found, will attend, or that a request will be fulfilled.</li>
+</ul>
+
+<h2 id="who">2. Who may use it</h2>
+<p>Donor and patient accounts are for people aged {{ min_age }} or older. A parent or legal guardian may post a request on behalf of a child. Hospital accounts are for authorised staff and must be approved by an administrator.</p>
+
+<h2 id="accounts">3. Your account</h2>
+<p>Give accurate information, keep your password private, and tell us if you think your account was misused. You are responsible for activity under your account. You can delete your account at any time from your profile.</p>
+
+<h2 id="requests">4. Requests, hospitals and donors</h2>
+<ul>
+<li>A request is shown to donors only after the named hospital approves it.</li>
+<li>Only hospital staff can approve requests and confirm that blood was actually collected. Totals on a request come from those confirmations.</li>
+<li>Do not post a request unless it is genuine. Do not put diagnoses or other sensitive medical details in notes.</li>
+<li>Donors should only offer to help if they are truly able to attend, and should cancel promptly if they cannot.</li>
+</ul>
+
+<h2 id="free">5. No payment for blood, no fees</h2>
+<p>Using BloodLink is free. Blood donation through BloodLink is voluntary: <strong>nobody may buy, sell or ask for payment or gifts in exchange for blood or for a place in a queue.</strong> If anyone asks you for money in connection with BloodLink, do not pay, and <a href="{{ url_for('public.contact') }}">report it</a>. Hospitals may have their own processing charges, which are between you and the hospital. See the <a href="{{ url_for('legal.refund_policy') }}">refund policy</a>.</p>
+
+<h2 id="use">6. Acceptable use</h2>
+<p>You must not: submit false or duplicate requests; harass or pressure donors; use donor or patient contact details for anything other than the request they were shared for; copy or scrape the donor list; try to break into accounts or the system; or upload anything unlawful.</p>
+
+<h2 id="suspend">7. Suspension</h2>
+<p>We may deactivate an account or remove a request that breaks these terms or puts people at risk. Where reasonable we will tell you why.</p>
+
+<h2 id="liability">8. Disclaimers and liability</h2>
+<p>The service is provided &ldquo;as is&rdquo;, as a student project, without guarantees of availability or accuracy. To the extent the law allows, we are not liable for loss or harm arising from use of the service, including delays, no donor being found, or decisions made by hospitals or donors. Nothing in these terms limits liability that cannot lawfully be limited.</p>
+
+<h2 id="changes">9. Changes</h2>
+<p>We may update these terms. The version and date at the top show the current text. If a change is material we will ask you to accept it again.</p>
+
+<h2 id="law">10. Governing law</h2>
+<p>These terms are governed by the laws of Pakistan. Local courts in {{ business.address }} have jurisdiction, unless mandatory consumer law gives you other rights.</p>
+
+<h2 id="contact">11. Contact</h2>
+<p>{{ business.name }}, {{ business.address }}{% if business.email %} &middot; <a href="mailto:{{ business.email }}">{{ business.email }}</a>{% endif %}.</p>
+{% endblock %}

@@ -1,0 +1,9 @@
+<a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}"><i class="fa-solid fa-gauge" aria-hidden="true"></i> Dashboard</a>
+<a href="{{ url_for('admin.users') }}" class="{{ 'active' if active == 'users' }}"><i class="fa-solid fa-users" aria-hidden="true"></i> All users</a>
+<a href="{{ url_for('admin.donors') }}" class="{{ 'active' if active == 'donors' }}"><i class="fa-solid fa-hand-holding-droplet" aria-hidden="true"></i> Donors</a>
+<a href="{{ url_for('admin.patients') }}" class="{{ 'active' if active == 'patients' }}"><i class="fa-solid fa-user-injured" aria-hidden="true"></i> Patients</a>
+<a href="{{ url_for('admin.hospitals') }}" class="{{ 'active' if active == 'hospitals' }}"><i class="fa-solid fa-hospital" aria-hidden="true"></i> Hospitals</a>
+<a href="{{ url_for('admin.requests_list') }}" class="{{ 'active' if active == 'requests' }}"><i class="fa-solid fa-droplet" aria-hidden="true"></i> Blood requests</a>
+<a href="{{ url_for('admin.analytics') }}" class="{{ 'active' if active == 'analytics' }}"><i class="fa-solid fa-chart-column" aria-hidden="true"></i> Reports</a>
+<a href="{{ url_for('admin.privacy_inbox') }}" class="{{ 'active' if active == 'privacy' }}"><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Privacy inbox</a>
+<a href="{{ url_for('chat.admin_reports') }}" class="{{ 'active' if active == 'chat' }}"><i class="fa-regular fa-flag" aria-hidden="true"></i> Chat reports {% if chat_open_reports %}<span class="nav-count">{{ chat_open_reports }}</span>{% endif %}</a>

@@ -1,0 +1,120 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import stat_card %}
+{% set active = 'dashboard' %}
+{% block title %}Admin dashboard{% endblock %}
+{% block dash_title %}Admin dashboard{% endblock %}
+{% block dash_subtitle %}Everything registered on BloodLink at a glance{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="row g-3 mb-3">
+  {{ stat_card('Donors', stats.donors, 'fa-hand-holding-droplet', 'danger') }}
+  {{ stat_card('Patients', stats.patients, 'fa-user-injured', 'primary') }}
+  {{ stat_card('Hospitals', stats.hospitals, 'fa-hospital', 'primary') }}
+  {{ stat_card('Blood requests', stats.requests, 'fa-droplet', 'danger') }}
+</div>
+<div class="row g-3 mb-4">
+  {{ stat_card('Pending approval', stats.pending, 'fa-hourglass-half', 'warning') }}
+  {{ stat_card('Open', stats.approved, 'fa-circle-check', 'primary') }}
+  {{ stat_card('Partially fulfilled', stats.partial, 'fa-battery-half', 'primary') }}
+  {{ stat_card('Fulfilled', stats.fulfilled, 'fa-heart', 'success') }}
+</div>
+<div class="row g-3 mb-4">
+  {{ stat_card('Outstanding units', stats.outstanding_units, 'fa-droplet', 'danger') }}
+  {{ stat_card('Verified donations', stats.verified_donations, 'fa-clipboard-check', 'success') }}
+  {{ stat_card('Verified hospitals', stats.verified_hospitals, 'fa-hospital', 'primary') }}
+  {{ stat_card('Open privacy requests', stats.open_data_requests, 'fa-user-shield', 'warning') }}
+</div>
+
+{% if stats.unverified_hospitals %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <span>{{ stats.unverified_hospitals }} hospital account(s) are waiting for verification.</span>
+  <a class="btn btn-sm btn-blood" href="{{ url_for('admin.hospitals') }}">Review hospitals</a>
+</div>
+{% endif %}
+
+<div class="panel">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">Recently registered ({{ stats.total_users }} accounts total)</h2>
+    <a class="btn btn-sm btn-outline-navy" href="{{ url_for('admin.users') }}">See all users</a>
+  </div>
+  {% if recent_users %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Name</th><th>Account type</th><th>Registered</th><th>Last active</th></tr></thead>
+      <tbody>
+      {% for u in recent_users %}
+      <tr>
+        <td><strong>{{ u.name }}</strong><div class="small text-muted">{{ u.email }}</div></td>
+        <td><span class="badge bg-secondary">{{ u.role_label }}</span></td>
+        <td class="text-nowrap">{{ u.created_at.strftime('%d %b %Y, %H:%M') if u.created_at else '—' }}</td>
+        <td class="text-nowrap">{{ u.last_login_at.strftime('%d %b %Y, %H:%M') if u.last_login_at else 'Never logged in' }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="fa-regular fa-user" aria-hidden="true"></i><p class="mb-0">No one has registered yet.</p></div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2 class="h5">Donors by blood group</h2>
+  <canvas id="groupChart" height="120" role="img" aria-label="Bar chart of registered donors by blood group. The same figures are in the table below."></canvas>
+  <table class="visually-hidden"><caption>Registered donors by blood group</caption>
+    <thead><tr><th scope="col">Blood group</th><th scope="col">Donors</th></tr></thead>
+    <tbody>{% for g, c in group_counts.items() %}<tr><th scope="row">{{ g }}</th><td>{{ c }}</td></tr>{% endfor %}</tbody></table>
+</div>
+<div class="panel">
+  <h2 class="h5">Requests by urgency</h2>
+  <p class="mb-0">{% for u in ['Critical', 'Urgent', 'Normal'] %}<span class="me-3">{{ u }}: <strong>{{ by_urgency.get(u, 0) }}</strong></span>{% endfor %}</p>
+</div>
+<div class="panel">
+  <h2 class="h5">Recent system activity</h2>
+  {% if recent_activity %}
+  <ul class="list-unstyled mb-0 small">{% for a in recent_activity %}<li class="py-1">{{ a.created_at.strftime('%d %b %H:%M') }} &middot; {{ a.actor_role }} #{{ a.actor_id }} &middot; {{ a.action }} ({{ a.target_type }} #{{ a.target_id }})</li>{% endfor %}</ul>
+  {% else %}<p class="text-muted mb-0">No activity recorded yet.</p>{% endif %}
+</div>
+
+<div class="panel">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">Latest blood requests</h2>
+    <a class="btn btn-sm btn-outline-navy" href="{{ url_for('admin.requests_list') }}">See all</a>
+  </div>
+  {% if requests %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Patient</th><th>Group</th><th>Hospital</th><th>Urgency</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+      {% for r in requests %}
+      <tr>
+        <td><strong>{{ r.patient_name }}</strong><div class="small text-muted">{{ r.created_at.strftime('%d %b %Y') }}</div></td>
+        <td><span class="blood-chip sm">{{ r.blood_group_required }}</span></td>
+        <td>{{ r.hospital.hospital_name }}</td>
+        <td><span class="badge bg-{{ r.urgency_color }}">{{ r.urgency }}</span></td>
+        <td><span class="badge bg-{{ r.status_color }}">{{ r.status_label }}</span></td>
+        <td><a class="btn btn-sm btn-outline-navy" href="{{ url_for('admin.request_detail', request_id=r.id) }}">Open</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="fa-regular fa-file-lines" aria-hidden="true"></i><p class="mb-0">No requests have been posted yet.</p></div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+  new Chart(document.getElementById("groupChart"), {
+    type: "bar",
+    data: {
+      labels: {{ group_counts.keys()|list|tojson }},
+      datasets: [{ label: "Registered donors", data: {{ group_counts.values()|list|tojson }}, backgroundColor: "#c1121f" }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+</script>
+{% endblock %}

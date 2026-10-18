@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Delete or access my data{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width: 720px;">
+    <h1>Delete, access or correct my data</h1>
+    <p class="lead">You do not need an account to ask. Logged-in donors and patients can also
+      <a href="{{ url_for('account.delete') }}">delete their account right away</a> or
+      <a href="{{ url_for('account.export') }}">download their data</a>.</p>
+    <form class="panel" method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <fieldset class="mb-3">
+        <legend class="form-label fs-6">What would you like?</legend>
+        {% for key, label in kinds.items() %}
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="kind" id="kind-{{ key }}" value="{{ key }}" {{ 'checked' if form.get('kind') == key }}>
+          <label class="form-check-label" for="kind-{{ key }}">{{ label }}</label>
+        </div>
+        {% endfor %}
+      </fieldset>
+      <div class="mb-3">
+        <label class="form-label" for="name">Name (optional)</label>
+        <input class="form-control" id="name" name="name" autocomplete="name" value="{{ form.get('name', '') }}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="email">Email address on the account or message</label>
+        <input class="form-control" id="email" name="email" type="email" autocomplete="email" required value="{{ form.get('email', '') }}">
+        <div class="form-text">We reply here and confirm it is you before changing anything.</div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="details">Details (optional)</label>
+        <textarea class="form-control" id="details" name="details" rows="3" maxlength="2000" aria-describedby="detailsHelp">{{ form.get('details', '') }}</textarea>
+        <div class="form-text" id="detailsHelp">Please do not include medical information.</div>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="consent" id="consent" required>
+        <label class="form-check-label" for="consent">I agree that BloodLink stores this request while it is handled, as described in the <a href="{{ url_for('legal.privacy_policy') }}">privacy policy</a>.</label>
+      </div>
+      <button class="btn btn-blood" type="submit">Send request</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

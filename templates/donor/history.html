@@ -1,0 +1,50 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'history' %}
+{% block title %}My responses{% endblock %}
+{% block dash_title %}My responses and donations{% endblock %}
+{% block dash_subtitle %}Offers you made, and donations a hospital has verified{% endblock %}
+{% block sidenav %}{% include "donor/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  {% if responses %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <caption class="visually-hidden">Your offers and verified donations</caption>
+      <thead><tr><th scope="col">Request</th><th scope="col">Group</th><th scope="col">Hospital</th><th scope="col">Offered</th><th scope="col">Status</th><th scope="col">Units</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+      {% for resp in responses %}
+        <tr>
+          <th scope="row">#{{ resp.request.id }}<div class="small text-muted fw-normal">{{ resp.request.location }}</div></th>
+          <td><span class="blood-chip sm">{{ resp.request.blood_group_required }}</span></td>
+          <td>{{ resp.request.hospital.hospital_name }}</td>
+          <td class="text-nowrap">{{ resp.response_date.strftime('%d %b %Y') }}</td>
+          <td><span class="badge bg-{{ resp.status_color }}">{{ resp.response_status }}</span>
+            {% if resp.appointment_at and resp.is_active %}<div class="small">Appointment {{ resp.appointment_at.strftime('%d %b, %H:%M') }}</div>{% endif %}
+            {% if resp.verified_at %}<div class="small text-success">Verified {{ resp.verified_at.strftime('%d %b %Y') }}</div>{% endif %}
+            {% if resp.hospital_note %}<div class="small text-muted">{{ resp.hospital_note }}</div>{% endif %}</td>
+          <td>{% if resp.response_status == 'Donation Completed' %}{{ resp.units_collected }} collected{% elif resp.is_active %}{{ resp.units_pledged }} pledged{% else %}-{% endif %}</td>
+          <td class="d-grid gap-1" style="min-width: 8rem;">
+            <a class="btn btn-sm btn-outline-navy" href="{{ url_for('chat.thread', response_id=resp.id) }}"><i class="fa-regular fa-comments me-1" aria-hidden="true"></i>Chat</a>
+            {% if resp.is_active and resp.appointment_at %}<a class="btn btn-sm btn-outline-navy" href="{{ url_for('trust.donor_checkin', response_id=resp.id) }}"><i class="fa-solid fa-qrcode me-1" aria-hidden="true"></i>Check-in code</a>{% endif %}
+            {% if resp.response_status == 'Donation Completed' %}<a class="btn btn-sm btn-outline-navy" href="{{ url_for('trust.certificate', response_id=resp.id) }}"><i class="fa-solid fa-certificate me-1" aria-hidden="true"></i>Certificate</a>{% endif %}
+            {% if resp.is_active %}
+            <form method="post" action="{{ url_for('donor.cancel_response', response_id=resp.id) }}" data-confirm="Cancel your offer for this request?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-outline-danger" type="submit">Cancel offer</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="small text-muted mb-0">A donation counts only after a hospital verifies it. You cannot mark it yourself. Verified donations start your usual rest period.</p>
+  {% else %}
+  <div class="empty-state"><i class="fa-regular fa-hand" aria-hidden="true"></i>
+    <p>You have not responded to any request yet.</p>
+    <a class="btn btn-blood" href="{{ url_for('donor.requests_feed') }}">See open requests</a></div>
+  {% endif %}
+</div>
+{% endblock %}

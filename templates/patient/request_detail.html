@@ -1,0 +1,83 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import progress_block %}
+{% set active = 'requests' %}
+{% block title %}Request #{{ blood_request.id }}{% endblock %}
+{% block dash_title %}Request #{{ blood_request.id }} &middot; {{ blood_request.blood_group_required }}{% endblock %}
+{% block dash_subtitle %}{{ blood_request.hospital.hospital_name }}, {{ blood_request.location }}{% endblock %}
+{% block sidenav %}{% include "patient/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  <div class="d-flex justify-content-between flex-wrap gap-3 mb-3">
+    <span class="badge bg-{{ blood_request.status_color }} fs-6">{{ blood_request.status_label }}</span>
+    <span class="badge bg-{{ blood_request.urgency_color }} fs-6">{{ blood_request.urgency }}</span>
+  </div>
+  <h2 class="h6">Progress</h2>
+  {{ progress_block(blood_request) }}
+  <p class="small text-muted mt-2 mb-3">Only the hospital can confirm that blood was collected. A request is Fulfilled when confirmed units reach the units required, not when the first donor is confirmed.</p>
+  <div class="row g-3">
+    <div class="col-md-6"><strong>Patient:</strong> {{ blood_request.patient_name }}</div>
+    <div class="col-md-6"><strong>Contact:</strong> {{ blood_request.contact_number }}</div>
+    <div class="col-md-6"><strong>Posted:</strong> {{ blood_request.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+    <div class="col-md-6"><strong>Required by:</strong> {{ blood_request.expiry_date.strftime('%d %b %Y') if blood_request.expiry_date else '-' }}</div>
+    <div class="col-md-6"><strong>Hospital verification:</strong>
+      {% if blood_request.hospital_verified %}<span class="text-success">Verified</span>
+      {% else %}<span class="text-muted">Not verified</span>{% endif %}</div>
+    {% if blood_request.closed_reason and blood_request.closed_reason != 'legacy' %}<div class="col-md-6"><strong>Closed because:</strong> {{ blood_request.closed_reason }}</div>{% endif %}
+    {% if blood_request.description %}<div class="col-12"><strong>Message:</strong> {{ blood_request.description }}</div>{% endif %}
+    {% if blood_request.hospital_notes %}
+    <div class="col-12"><div class="alert alert-info mb-0"><strong>Hospital notes:</strong> {{ blood_request.hospital_notes }}</div></div>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2 mt-4 flex-wrap">
+    {% if blood_request.is_editable %}
+    <a class="btn btn-outline-navy" href="{{ url_for('patient.edit_request', request_id=blood_request.id) }}">Edit request</a>
+    {% endif %}
+    {% if blood_request.is_live %}
+    <form method="post" action="{{ url_for('patient.cancel_request', request_id=blood_request.id) }}"
+          data-confirm="Cancel this request? Donors who offered to help will be told.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="visually-hidden" for="reason">Reason (optional)</label>
+      <input class="form-control d-inline-block w-auto me-2" id="reason" name="reason" maxlength="255" placeholder="Reason (optional)">
+      <button class="btn btn-outline-danger" type="submit">Cancel request</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <h2 class="h5">Donor offers ({{ blood_request.responses|length }})</h2>
+  {% if blood_request.responses %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <caption class="visually-hidden">Donors who offered to help with this request</caption>
+      <thead><tr><th scope="col">Donor</th><th scope="col">Group</th><th scope="col">City</th><th scope="col">Contact</th><th scope="col">Status</th><th scope="col">Units</th><th scope="col"><span class="visually-hidden">Chat</span></th></tr></thead>
+      <tbody>
+      {% for resp in blood_request.responses %}
+      <tr>
+        <th scope="row">{{ resp.donor.name }}</th>
+        <td><span class="blood-chip sm">{{ resp.donor.blood_group }}</span></td>
+        <td>{{ resp.donor.city }}</td>
+        <td class="text-nowrap">{% if resp.contact_consent_at and resp.is_active %}{{ resp.donor.phone }}{% else %}<span class="text-muted small">-</span>{% endif %}</td>
+        <td><span class="badge bg-{{ resp.status_color }}">{{ resp.response_status }}</span>
+          {% if resp.appointment_at and resp.is_active %}<div class="small text-muted">{{ resp.appointment_at.strftime('%d %b, %H:%M') }}</div>{% endif %}</td>
+        <td>{% if resp.response_status == 'Donation Completed' %}{{ resp.units_collected }} collected{% elif resp.is_active %}{{ resp.units_pledged }} pledged{% else %}-{% endif %}</td>
+        <td><a class="btn btn-sm btn-outline-navy" href="{{ url_for('chat.thread', response_id=resp.id) }}"><i class="fa-regular fa-comments me-1" aria-hidden="true"></i>Chat</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="small text-muted mb-0">An offer is not a medical clearance. The hospital confirms each donation after screening; you cannot confirm it yourself.</p>
+  {% else %}
+  <p class="text-muted mb-0">No donor has offered yet. Offers appear here as soon as they arrive.</p>
+  {% endif %}
+</div>
+
+{% if updates %}
+<div class="panel">
+  <h2 class="h5">Updates</h2>
+  <ul class="list-unstyled mb-0">{% for u in updates %}<li class="py-1">{{ u.message }} <span class="text-muted small">{{ u.created_at.strftime('%d %b, %H:%M') }}</span></li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% endblock %}

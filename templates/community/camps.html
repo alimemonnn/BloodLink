@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Donation camps{% endblock %}
+{% block content %}
+<section class="section"><div class="container">
+  <h1>Donation camps</h1>
+  <p class="lead">Upcoming events run by verified hospitals. Sign up to reserve a place.</p>
+  <form method="get" class="d-flex gap-2 mb-3" style="max-width: 420px;"><label class="visually-hidden" for="city">City</label>
+    <input class="form-control" id="city" name="city" value="{{ city }}" placeholder="Filter by city"><button class="btn btn-outline-navy" type="submit">Filter</button></form>
+  {% for c in camps %}
+  <div class="panel mb-3"><div class="d-flex flex-wrap justify-content-between gap-2">
+    <div><h2 class="h5 mb-1">{{ c.title }}</h2>
+      <div class="text-muted">{{ c.hospital.hospital_name }} &middot; {{ c.venue }}, {{ c.city }}</div>
+      <div><i class="fa-regular fa-calendar me-1" aria-hidden="true"></i>{{ c.starts_at.strftime('%A %d %b, %H:%M') }} to {{ c.ends_at.strftime('%H:%M') }} (UTC)</div>
+      {% if c.description %}<p class="mb-1 mt-2">{{ c.description }}</p>{% endif %}
+      <span class="badge bg-{{ 'secondary' if c.spots_left == 0 else 'success' }}">{{ c.spots_left }} of {{ c.capacity }} places left</span></div>
+    <div>{% if donor %}
+      {% if c.id in joined %}<form method="post" action="{{ url_for('community.leave_camp', camp_id=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-secondary" type="submit">Cancel my place</button></form>
+      {% elif c.spots_left > 0 %}<form method="post" action="{{ url_for('community.join_camp', camp_id=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-blood" type="submit">Sign up</button></form>
+      {% else %}<span class="text-muted">Full</span>{% endif %}
+      {% elif not current_user %}<a class="btn btn-blood" href="{{ url_for('auth.login') }}">Log in to sign up</a>{% endif %}</div>
+  </div></div>
+  {% else %}<div class="empty-state"><p>No upcoming camps{{ ' in ' + city if city }}.</p></div>{% endfor %}
+</div></section>
+{% endblock %}

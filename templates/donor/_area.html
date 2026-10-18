@@ -1,0 +1,16 @@
+<div class="panel mb-3" id="areaBox">
+  <h2 class="h6 mb-2"><i class="fa-solid fa-location-crosshairs me-1 text-danger" aria-hidden="true"></i> Nearby requests (optional)</h2>
+  <p class="small text-muted">By default we use your city. If you share your approximate area, requests are ranked by distance. We keep it rounded to about 1 km, only for this, and you can remove it any time.</p>
+  {% if donor.area_lat is not none %}
+  <p class="mb-2">Saved: area near {{ '%.2f'|format(donor.area_lat) }}, {{ '%.2f'|format(donor.area_lng) }}.</p>
+  <form method="post" action="{{ url_for('engage.set_area') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-sm btn-outline-secondary" name="clear" value="1" type="submit">Remove my area</button></form>
+  {% else %}
+  <form method="post" action="{{ url_for('engage.set_area') }}" id="areaForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="lat" id="areaLat"><input type="hidden" name="lng" id="areaLng">
+    <button class="btn btn-sm btn-outline-navy" id="areaBtn" type="button" hidden>Use my approximate area</button>
+    <p class="small text-muted mb-0 mt-2" id="areaNote" role="status"></p>
+  </form>
+  <script src="{{ url_for('static', filename='js/area.js') }}" defer></script>
+  {% endif %}
+</div>

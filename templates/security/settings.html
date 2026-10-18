@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Account security{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 720px;">
+  <h1>Account security</h1>
+  <div class="panel mb-3">
+    <h2 class="h5">Email address</h2>
+    <p class="mb-2">{{ user.email }}
+      {% if user.email_verified_at %}<span class="badge bg-success">Confirmed</span>{% else %}<span class="badge bg-secondary">Not confirmed</span>{% endif %}</p>
+    {% if not user.email_verified_at %}
+    <form method="post" action="{{ url_for('security.send_verification') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-sm btn-outline-navy" type="submit">Send confirmation link</button></form>
+    {% endif %}
+  </div>
+  <div class="panel mb-3" id="pushBox" data-csrf="{{ csrf_token() }}">
+    <h2 class="h5">Alerts on this device</h2>
+    <p>Get a notification here when a request matches your group or something changes on your offer. It contains no names or medical details.</p>
+    <button class="btn btn-sm btn-outline-navy" id="pushToggle" type="button">Turn on alerts on this device</button>
+    <p class="small text-muted mt-2 mb-0" id="pushNote" role="status"></p>
+  </div>
+  <div class="panel">
+    <h2 class="h5">Two-factor login {% if user.has_2fa %}<span class="badge bg-success">On</span>{% else %}<span class="badge bg-secondary">Off</span>{% endif %}</h2>
+    {% if required and not user.has_2fa %}<div class="alert alert-warning">Two-factor login is required for your account type. Please turn it on.</div>{% endif %}
+    {% if user.has_2fa %}
+    <p>You will be asked for a code from your authenticator app when you log in. Recovery codes left: <strong>{{ codes_left }}</strong>.</p>
+    <form method="post" action="{{ url_for('security.new_codes') }}" class="mb-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="pw1">Password</label>
+      <input class="form-control mb-2" id="pw1" name="password" type="password" autocomplete="current-password" required>
+      <button class="btn btn-sm btn-outline-navy" type="submit">Make new recovery codes</button></form>
+    {% if not required %}
+    <form method="post" action="{{ url_for('security.disable_2fa') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="pw2">Password</label>
+      <input class="form-control mb-2" id="pw2" name="password" type="password" autocomplete="current-password" required>
+      <label class="form-label" for="cd2">Current code or a recovery code</label>
+      <input class="form-control mb-2" id="cd2" name="code" required>
+      <button class="btn btn-sm btn-outline-danger" type="submit">Turn off two-factor login</button></form>
+    {% endif %}
+    {% else %}
+    <p>Adds a second step at login, so a stolen password alone is not enough. Recommended for hospitals and administrators, who confirm donations.</p>
+    <form method="post" action="{{ url_for('security.start_2fa') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-blood" type="submit">Set up two-factor login</button></form>
+    {% endif %}
+  </div>
+</div></section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/push.js') }}" defer></script>{% endblock %}

@@ -1,0 +1,62 @@
+# Render Blueprint: "New +" -> "Blueprint" and point it at your GitHub repo.
+# The web service answers requests; the cron job runs reminders, escalation and message delivery.
+# Every secret below is optional except SECRET_KEY and DATABASE_URL.
+services:
+  - type: web
+    name: bloodlink
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --timeout 60
+    healthCheckPath: /healthz
+    envVars: &env
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL        # paste your Neon / Supabase connection string
+        sync: false
+      - key: ADMIN_EMAIL         # first admin login (created automatically)
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: BUSINESS_EMAIL      # shown in the footer and policies
+        sync: false
+      - key: PUBLIC_BASE_URL     # e.g. https://bloodlink.onrender.com (needed for email links)
+        sync: false
+      - key: USE_ALEMBIC         # "1": schema is managed by `flask db upgrade` (see README)
+        value: "1"
+      - key: LOG_FORMAT
+        value: json
+      - key: REQUIRE_2FA_ROLES   # e.g. "admin,hospital" forces two-factor login for those accounts
+        sync: false
+      - key: REDIS_URL           # optional: shared rate limits across workers
+        sync: false
+      - key: SENTRY_DSN          # optional: error tracking
+        sync: false
+      - key: NOTIFY_PROVIDER     # none / twilio  (SMS and WhatsApp)
+        value: none
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_SMS_FROM
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: VAPID_PUBLIC_KEY    # optional: browser push notifications
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT       # mailto:you@example.com
+        sync: false
+      - key: ANTHROPIC_API_KEY   # optional: "Translate" button in chat
+        sync: false
+    preDeployCommand: flask --app app db upgrade
+  - type: cron
+    name: bloodlink-jobs
+    runtime: python
+    schedule: "*/5 * * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: flask --app app jobs
+    envVars: *env

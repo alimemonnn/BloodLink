@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8.0
+fakeredis>=2.20
+openapi-spec-validator>=0.7

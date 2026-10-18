@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Session expired{% endblock %}
+{% block content %}
+<section class="section"><div class="container empty-state">
+  <i class="fa-solid fa-hourglass-end" aria-hidden="true"></i>
+  <h1>This page has expired</h1>
+  <p>For your security the form could not be verified. Go back, reload the page and try again.</p>
+  <a class="btn btn-blood" href="{{ url_for('public.index') }}">Back to home</a>
+</div></section>
+{% endblock %}

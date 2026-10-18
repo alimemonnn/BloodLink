@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Public API{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 900px;">
+  <h1>BloodLink public API</h1>
+  <p class="lead">{{ spec.info.description }}</p>
+  <p>Machine-readable description: <a href="{{ url_for('api.openapi_json') }}">openapi.json</a> (OpenAPI {{ spec.openapi }}). Base path: <code>/api/v1</code>.</p>
+  {% for path, ops in spec.paths.items() %}{% for method, op in ops.items() %}
+  <div class="panel mb-3"><h2 class="h5"><span class="badge bg-success text-uppercase">{{ method }}</span> <code>/api/v1{{ path }}</code></h2>
+    <p class="mb-2">{{ op.summary }}</p>
+    {% if op.parameters %}<table class="table table-sm mb-2"><caption class="visually-hidden">Parameters of {{ path }}</caption>
+      <thead><tr><th scope="col">Parameter</th><th scope="col">In</th><th scope="col">Type</th></tr></thead>
+      <tbody>{% for p in op.parameters %}<tr><td><code>{{ p.name }}</code>{% if p.required %} (required){% endif %}</td><td>{{ p.in }}</td><td>{{ p.schema.type }}{% if p.schema.enum %}: {{ p.schema.enum|join(', ') }}{% endif %}</td></tr>{% endfor %}</tbody></table>{% endif %}
+    <p class="small text-muted mb-0">Try: <code>curl "{{ request.host_url.rstrip('/') }}/api/v1{{ path.replace('{code}', 'BL-00017-AB12CD34') }}"</code></p></div>
+  {% endfor %}{% endfor %}
+</div></section>
+{% endblock %}

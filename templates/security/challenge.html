@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Two-factor check{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 520px;">
+  <h1>Two-factor check</h1>
+  <p class="lead">Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
+  <div class="panel">
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="code">Code</label>
+      <input class="form-control mb-3" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" autofocus required>
+      <button class="btn btn-blood" type="submit">Verify and log in</button>
+      <a class="btn btn-link" href="{{ url_for('auth.login') }}">Cancel</a>
+    </form>
+  </div>
+</div></section>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Blood stock at hospitals{% endblock %}
+{% block content %}
+<section class="section"><div class="container">
+  <h1>Blood stock at hospitals</h1>
+  <p class="lead">Units that hospitals report holding. <strong>Self-reported and may be out of date. Please call before you travel.</strong></p>
+  <form method="get" class="d-flex gap-2 mb-3" style="max-width: 420px;"><label class="visually-hidden" for="city">City</label>
+    <select class="form-select" id="city" name="city"><option value="">All cities</option>{% for c in cities %}<option {{ 'selected' if c == city }}>{{ c }}</option>{% endfor %}</select>
+    <button class="btn btn-outline-navy" type="submit">Filter</button></form>
+  <div class="panel mb-3"><h2 class="h6">Total reported</h2>
+    <div class="d-flex flex-wrap gap-2">{% for g in groups %}<span class="badge {{ 'bg-danger' if totals[g] <= low else 'bg-secondary' }} fs-6" title="{{ 'Low' if totals[g] <= low else '' }}">{{ g }}: {{ totals[g] }}{% if totals[g] <= low %} (low){% endif %}</span>{% endfor %}</div></div>
+  {% for h in hospitals %}
+  <div class="panel mb-3"><h2 class="h5">{{ h.hospital_name }} <span class="small text-muted">{{ h.city }} &middot; {{ h.phone }}</span></h2>
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0"><caption class="visually-hidden">Stock at {{ h.hospital_name }}</caption>
+      <thead><tr>{% for s in h.stock|sort(attribute='blood_group') %}<th scope="col">{{ s.blood_group }}</th>{% endfor %}</tr></thead>
+      <tbody><tr>{% for s in h.stock|sort(attribute='blood_group') %}<td>{{ s.units }}{% if s.units <= low %} <span class="badge bg-danger">low</span>{% endif %}</td>{% endfor %}</tr></tbody></table></div>
+    <p class="small text-muted mb-0 mt-2">Updated {{ ago(h.stock|map(attribute='updated_at')|max) }}.</p></div>
+  {% else %}<div class="empty-state"><p>No hospital has reported stock{{ ' in ' + city if city }} yet.</p></div>{% endfor %}
+</div></section>
+{% endblock %}
