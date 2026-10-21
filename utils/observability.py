@@ -42,9 +42,7 @@ def init_logging(app, production):
         handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s [%(request_id)s]: %(message)s"))
     root.handlers[:] = [handler]
     root.setLevel(logging.INFO if production else logging.DEBUG)
-    # logging.getLogger("werkzeug").setLevel(logging.WARNING)  
-    #      # we log requests ourselves, without query strings
-    logging.getLogger("werkzeug").setLevel(logging.INFO)
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)       # we log requests ourselves, without query strings
     access = logging.getLogger("bloodlink.access")
 
     @app.before_request

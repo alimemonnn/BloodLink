@@ -10,6 +10,7 @@ import shutil
 from datetime import datetime
 
 import click
+import warnings
 from flask_migrate import Migrate
 from flask import (Flask, abort, flash, g, jsonify, redirect, render_template, request,
                    session, url_for)
@@ -39,6 +40,8 @@ from utils.chat import unread_total
 from utils.notifications import unread_count
 
 CSRF_EXEMPT_ENDPOINTS = {"legal.unsubscribe"}     # authorised by a signed token instead
+
+warnings.filterwarnings("ignore", category=DeprecationWarning, message=r".*utcnow.*")   # harmless on Python 3.12+
 
 
 def create_app(config_class=Config):
@@ -361,4 +364,10 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get("FLASK_DEBUG") == "1", host="127.0.0.1", port=5000)
+    port = int(os.environ.get("PORT", "5000"))
+    debug = os.environ.get("FLASK_DEBUG") == "1"
+    # BLOODLINK_RELOAD=0 turns off the auto-restart so breakpoints in VS Code keep working.
+    reload = debug and os.environ.get("BLOODLINK_RELOAD", "1") != "0"
+    if os.environ.get("WERKZEUG_RUN_MAIN") != "true":          # the reloader starts a second copy: print once
+        print(f"\nBloodLink is running.  Open  http://127.0.0.1:{port}  in your browser.  (Ctrl+C to stop)\n", flush=True)
+    app.run(debug=debug, use_reloader=reload, host="127.0.0.1", port=port)

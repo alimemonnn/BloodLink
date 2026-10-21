@@ -8,6 +8,9 @@ is production. All people below are fictional and use example.com addresses.
 Demo logins are printed at the end and exist only in your local database.
 """
 import sys
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)   # Python 3.12+ warns about utcnow(); harmless here
 from datetime import date, datetime, timedelta
 
 from app import create_app

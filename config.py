@@ -11,6 +11,12 @@ import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+try:                                    # a .env file next to this file is read automatically (never overrides real env vars)
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, ".env"))
+except ImportError:                     # python-dotenv not installed: use real environment variables only
+    pass
+
 # Render sets RENDER=true. You can also set BLOODLINK_ENV=production yourself.
 IS_PRODUCTION = (
     os.environ.get("BLOODLINK_ENV", "").lower() == "production"
@@ -157,6 +163,7 @@ class Config:
     SMTP_USER = os.environ.get("SMTP_USER", "").strip()
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     SMTP_FROM = os.environ.get("SMTP_FROM", "").strip()
+    SMTP_SECURITY = os.environ.get("SMTP_SECURITY", "").strip().lower()    # "starttls" (587, default) or "ssl" (465)
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
 
     # Optional: create the first admin from environment variables on startup.

@@ -9,12 +9,40 @@ Rules this module enforces:
 """
 import logging
 import smtplib
+import ssl
 from email.message import EmailMessage
 
 from flask import current_app
 from itsdangerous import BadSignature, URLSafeSerializer
 
 log = logging.getLogger("bloodlink.mail")
+
+
+def _tls_context():
+    """Verify the mail server's certificate (tests replace this to trust a local test certificate)."""
+    return ssl.create_default_context()
+
+
+def _open_smtp(c):
+    """Connect to the configured SMTP server over TLS.
+
+    SMTP_SECURITY=ssl (or port 465) = encrypted from the first byte; otherwise STARTTLS (port 587).
+    There is deliberately no plain-text option: passwords and messages are never sent unencrypted.
+    """
+    mode = c.get("SMTP_SECURITY") or ("ssl" if int(c["SMTP_PORT"]) == 465 else "starttls")
+    if mode == "ssl":
+        smtp = smtplib.SMTP_SSL(c["SMTP_HOST"], c["SMTP_PORT"], timeout=10, context=_tls_context())
+    else:
+        smtp = smtplib.SMTP(c["SMTP_HOST"], c["SMTP_PORT"], timeout=10)
+    try:
+        if mode != "ssl":
+            smtp.starttls(context=_tls_context())
+        if c["SMTP_USER"]:
+            smtp.login(c["SMTP_USER"], c["SMTP_PASSWORD"])
+    except Exception:
+        smtp.close()                      # never leave a half-open connection behind
+        raise
+    return smtp
 
 
 def _serializer():
@@ -60,10 +88,7 @@ def send_donor_email(donor, subject, body):
         return False
     c = current_app.config
     try:
-        with smtplib.SMTP(c["SMTP_HOST"], c["SMTP_PORT"], timeout=10) as smtp:
-            smtp.starttls()
-            if c["SMTP_USER"]:
-                smtp.login(c["SMTP_USER"], c["SMTP_PASSWORD"])
+        with _open_smtp(c) as smtp:
             smtp.send_message(build_message(donor, subject, body))
         return True
     except Exception as exc:                      # provider down, bad credentials...
@@ -92,10 +117,7 @@ def deliver(to_address, subject, body):
         msg["From"], msg["To"], msg["Subject"] = c["SMTP_FROM"], to_address, subject
         msg.set_content(body)
         try:
-            with smtplib.SMTP(c["SMTP_HOST"], c["SMTP_PORT"], timeout=10) as smtp:
-                smtp.starttls()
-                if c["SMTP_USER"]:
-                    smtp.login(c["SMTP_USER"], c["SMTP_PASSWORD"])
+            with _open_smtp(c) as smtp:
                 smtp.send_message(msg)
             return True
         except Exception as exc:

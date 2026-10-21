@@ -1,4 +1,5 @@
 -r requirements.txt
 pytest>=8.0
+aiosmtpd>=1.4
 fakeredis>=2.20
 openapi-spec-validator>=0.7
