@@ -5,6 +5,7 @@ SQLAlchemy>=2.0.44,<2.2
 Werkzeug==3.0.3
 gunicorn==22.0.0
 psycopg2-binary>=2.9.10
+psycopg[binary]>=3.2,<4
 itsdangerous>=2.2.0
 cryptography>=43.0
 segno==1.6.6
