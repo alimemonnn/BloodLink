@@ -1,315 +1,590 @@
-# BloodLink — Blood Donor & Emergency Request Network
+# 🩸 BloodLink — Blood Donor & Emergency Request Network
 
-[![tests](../../actions/workflows/ci.yml/badge.svg)](../../actions) ![license](https://img.shields.io/badge/license-MIT-blue) ![python](https://img.shields.io/badge/python-3.12-blue) ![db](https://img.shields.io/badge/SQLite%20%7C%20PostgreSQL%2016-tested-green)
-
-**Connecting donors, patients and hospitals, with the hospital in charge of every decision that matters.**
-
-BloodLink is a Flask web application. A patient posts a blood request, the named hospital reviews it,
-compatible volunteer donors are shown the request and can offer to help, and the hospital coordinates the
-donors and **confirms each donation**. A request for several units is tracked until every unit is confirmed.
-
-![BloodLink chat between a donor, a patient's family and the hospital](docs/screenshots/chat-thread-patient.png)
-
-<p>
-<img src="docs/screenshots/hospital-donor-coordination.png" width="49%" alt="Hospital coordinates donors and confirms units">
-<img src="docs/screenshots/chat-thread-mobile.png" width="22%" alt="Chat on a phone">
+<p align="center">
+  <img src="docs/screenshots/hospital-donor-coordination.png" alt="BloodLink hospital donor coordination dashboard" width="100%">
 </p>
 
-<p>
-<img src="docs/screenshots/donor-dashboard.png" width="49%" alt="Donor dashboard with availability, badges and next eligible date">
-<img src="docs/screenshots/qr-checkin-donor.png" width="49%" alt="Donor's QR check-in code">
-<img src="docs/screenshots/admin-analytics.png" width="49%" alt="Admin analytics: demand and supply by blood group">
-<img src="docs/screenshots/public-stock.png" width="49%" alt="Public blood stock page">
+<p align="center">
+  <strong>Connecting donors, patients, and hospitals through transparent, hospital-verified blood donation coordination.</strong>
 </p>
 
-> University project. BloodLink is **not** a medical service. It never decides who may donate or receive
-> blood, and it makes no clinical claims. Hospitals decide eligibility, testing and crossmatching.
+<p align="center">
+  <a href="https://github.com/alimemonnn/BloodLink/actions/workflows/ci.yml">
+    <img src="https://github.com/alimemonnn/BloodLink/actions/workflows/ci.yml/badge.svg" alt="GitHub Actions tests">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white" alt="Python 3.12">
+  <img src="https://img.shields.io/badge/Flask-3.0-black?logo=flask" alt="Flask">
+  <img src="https://img.shields.io/badge/Database-SQLite%20%7C%20PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="SQLite and PostgreSQL">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
+</p>
+
+<p align="center">
+  <a href="#-overview">Overview</a> •
+  <a href="#-screenshots">Screenshots</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-testing">Testing</a> •
+  <a href="#-deployment">Deployment</a>
+</p>
 
 ---
 
-## 1. The problem and the teacher's scenario
+## 📌 Overview
 
-*A patient needs three units of blood and three compatible donors are available. How does the system
-coordinate them, know how many units have been provided, and know when the request is fulfilled?*
+**BloodLink** is a Flask-based web application designed to improve coordination between blood donors, patients or their families, and hospitals.
 
-**Answer: totals are derived from hospital-verified donation records, never from donor claims.**
+Traditional emergency blood coordination often relies on phone calls and messaging groups. BloodLink provides a centralized workflow in which patients submit requests, hospitals review those requests, compatible volunteer donors can offer assistance, and hospitals verify completed donations.
 
-```
-required = 3
-Donor A offers 1  -> pledged 1, confirmed 0   status Open
-Hospital confirms A -> confirmed 1, remaining 2  status Partially Fulfilled   (33 %)
-Hospital confirms B -> confirmed 2, remaining 1  status Partially Fulfilled   (66 %)
-Hospital confirms C -> confirmed 3, remaining 0  status Fulfilled             (100 %)
-```
+The central principle is simple:
 
-`remaining = max(0, required - confirmed)` and `progress = min(100, confirmed / required * 100)`;
-zero, negative or missing `required` values are handled safely.
+> **Donor willingness is not a confirmed donation. Only hospital-verified donations count toward fulfilling a request.**
 
-### How multi-donor allocation works (`utils/allocation.py`)
+BloodLink is a university software engineering project. It is not a medical service, does not determine clinical eligibility, and does not replace professional blood-bank procedures.
 
-| Concept | Where it lives |
+### 🎯 The problem BloodLink addresses
+
+- Coordinating multiple donors for a single blood request.
+- Tracking required, pledged, confirmed, and remaining units separately.
+- Preventing unverified donor offers from being counted as completed donations.
+- Giving patients, donors, and hospitals role-specific workflows.
+- Maintaining a traceable history of requests, offers, and hospital confirmations.
+
+## 📸 Screenshots
+
+The following screenshots showcase the main workflows and interface.
+
+### Hospital coordination and messaging
+
+<p align="center">
+  <img src="docs/screenshots/hospital-donor-coordination.png" alt="Hospital donor coordination" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/chat-thread-patient.png" alt="Conversation between a donor, patient family, and hospital" width="100%">
+</p>
+
+### Donor dashboard and QR check-in
+
+<p align="center">
+  <img src="docs/screenshots/donor-dashboard.png" alt="Donor dashboard with availability, badges, and eligibility countdown" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/qr-checkin-donor.png" alt="Donor QR check-in code" width="70%">
+</p>
+
+### Mobile experience
+
+<p align="center">
+  <img src="docs/screenshots/chat-thread-mobile.png" alt="BloodLink mobile chat interface" width="280">
+</p>
+
+### Public blood stock and analytics
+
+<p align="center">
+  <img src="docs/screenshots/public-stock.png" alt="Public hospital blood stock page" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/admin-analytics.png" alt="Administrative analytics dashboard" width="100%">
+</p>
+
+> Screenshot paths are relative to the repository root. Keep the filenames and directory structure consistent with the files in `docs/screenshots/`.
+
+---
+
+## ✨ Features
+
+### 🩸 1. Hospital-verified donation tracking
+
+BloodLink distinguishes between four important quantities:
+
+| Metric | Meaning |
 |---|---|
-| Units **required** | `blood_requests.units_required` (CHECK ≥ 1) |
-| One donor's offer / contribution | one row in `donation_responses` per donor per request |
-| Units **pledged** (not yet verified) | sum of `units_pledged` of *active* responses (Interested, Contacted, Appointment Scheduled) |
-| Units **confirmed** | sum of `units_collected` of responses with status *Donation Completed*. **Only a hospital can set this.** |
-| Units **remaining**, **progress %** | computed properties on `BloodRequest`, no stored counter that can drift |
+| Required units | Total units requested by the patient |
+| Pledged units | Units associated with active donor offers |
+| Confirmed units | Units recorded through hospital-confirmed donations |
+| Remaining units | Required units minus confirmed units, with a minimum of zero |
 
-Rules enforced on the **server** (browser checks are only a convenience):
+Request progress is calculated from verified donation records rather than a manually maintained counter.
 
-1. Only the hospital that owns the request can confirm a donation (object-level authorisation).
-2. A donor's "I can donate" is *willingness only*; it never counts as blood and is not medical approval.
-3. A confirmation can never push the total above `required`; by default one unit per donor per event
-   (`MAX_UNITS_PER_DONOR_DONATION`).
-4. A response can be confirmed once. A retried or double-clicked submit is rejected, not double-counted.
-5. The request row is **locked** while confirming (PostgreSQL `SELECT … FOR UPDATE`; on SQLite a no-op write
-   takes the single write lock), so two hospital users cannot both claim the last unit. A two-thread test proves it.
-6. Everything happens in one transaction; any failure rolls back (also tested).
-7. On fulfilment, leftover offers are cancelled and those donors are told. On cancel or expiry, outstanding
-   offers are cancelled; verified donations stay on record.
-8. `flask check-consistency` verifies that statuses agree with the donation records.
+For example, if a patient requires three units:
 
-**Request states:** Pending Hospital Approval → Open (stored as `Approved`) → Partially Fulfilled → Fulfilled;
-or Rejected / Cancelled / Expired.
-**Donor-response states:** Interested → Contacted → Appointment Scheduled → Donation Completed (hospital only);
-or Cancelled / Ineligible.
+```text
+Required units: 3
+
+Donor A offers 1 unit
+Pledged: 1 | Confirmed: 0
+
+Hospital confirms Donor A
+Confirmed: 1 | Remaining: 2 | Progress: 33%
+
+Hospital confirms Donor B
+Confirmed: 2 | Remaining: 1 | Progress: 66%
+
+Hospital confirms Donor C
+Confirmed: 3 | Remaining: 0 | Progress: 100%
+```
+
+The application calculates remaining units and progress dynamically.
+
+### 🔒 2. Request integrity and transaction safety
+
+Server-side rules help protect donation records and request totals:
+
+- Only the hospital responsible for a request can confirm its donations.
+- A donor's offer represents willingness to help, not medical approval or completed donation.
+- Confirmation cannot exceed the required number of units.
+- Duplicate confirmation attempts are rejected.
+- Database transactions protect related updates.
+- PostgreSQL row locking helps prevent concurrent users from claiming the same remaining unit.
+- Outstanding offers are cancelled when a request is fulfilled, cancelled, or expired.
+- A consistency-check command helps identify disagreements between request states and donation records.
+
+### 🤝 3. Rule-based donor matching
+
+The matching system in `utils/matching.py` uses transparent rules rather than machine learning.
+
+**Hard filters include:**
+- Configured ABO/Rh red-cell compatibility.
+- Active donor account and declared availability.
+- Configurable rest interval.
+- Hospital-recorded deferral status.
+- Whether the donor has already responded to the request.
+
+**Ranking can consider:**
+- City and available location information.
+- Exact blood-group match.
+- Donation history and other configured matching factors.
+
+The system explains why a donor appears in the shortlist. Matching is intended to support hospital coordination, not replace professional screening, testing, or crossmatching.
+
+### 💬 4. Private coordination chat
+
+Once a donor offers to help, a conversation is associated with that donation response.
+
+- Communication between the donor, patient or family, and hospital.
+- Automatic timeline entries for relevant coordination events.
+- Appointment and donation-plan information.
+- Quick replies for common coordination messages.
+- Optional one-time location sharing with configurable retention.
+- Urdu and Sindhi right-to-left message display.
+- Rate limiting and HTML escaping.
+- Chat history included in relevant data-export workflows.
+- Message retention and account-deletion handling.
+
+Chat messages do not change donation totals or request states directly. Delivery uses short polling rather than a WebSocket server.
+
+### 👥 5. Role-based workflows
+
+| Role | Main capabilities |
+|---|---|
+| Patient / family | Register, submit requests, view progress, review offers, receive updates, cancel requests, and manage personal data |
+| Donor | Manage availability, review compatible requests, offer assistance, track donation history, and control contact-sharing preferences |
+| Hospital | Approve or reject requests, coordinate donors, schedule appointments, record eligibility decisions, confirm donations, and close requests |
+| Administrator | Verify hospitals, manage accounts, view analytics and activity logs, and handle privacy requests and contact messages |
+
+### 🚀 6. Additional capabilities
+
+| Area | Features |
+|---|---|
+| Emergency coordination | Configurable escalation for urgent requests and compatible donors |
+| Trust and verification | QR check-in, no-show records, donation certificates, and public certificate verification |
+| Notifications | Configurable email, SMS, WhatsApp, push notifications, and appointment reminders |
+| Account security | Email confirmation, password-reset links, optional two-factor authentication, and recovery codes |
+| Request assistance | Rule-based form assistance from pasted messages and rule-based scam or money-request flagging |
+| Translation | Optional English, Urdu, and Sindhi translation through the Claude API |
+| Hospital tools | Public blood stock, donation camps, sign-ups, analytics, and CSV export |
+| Donor engagement | Badges, donation streaks, and next-eligible-date countdown |
+| Data access | Account data export, deletion workflows, privacy requests, and retention cleanup |
+| Platform | REST API documentation, database migrations, structured logging, optional Redis rate limiting, and optional Sentry integration |
+
+**External integrations:** SMS, WhatsApp, push notifications, translation, Redis, and Sentry require appropriate configuration. Automated tests using fakes do not establish that a live third-party integration is operational.
+
+---
+
+## 🧭 Request lifecycle
 
 ```mermaid
-flowchart LR
-  P[Patient posts request] --> H{Hospital reviews}
-  H -- reject --> R[Rejected]
-  H -- approve --> O[Open: donors notified]
-  O --> D[Donors offer to help<br/>willingness only]
-  D --> C[Hospital contacts / schedules / screens]
-  C -- ineligible --> I[Ineligible, optional deferral]
-  C -- donation verified --> V[Units confirmed +1]
-  V --> Q{confirmed >= required?}
-  Q -- no --> PF[Partially Fulfilled]
-  PF --> D
-  Q -- yes --> F[Fulfilled<br/>leftover offers cancelled]
-  O --> X[Cancelled or Expired<br/>offers cancelled, history kept]
+flowchart TD
+    A[Patient submits blood request] --> B{Hospital reviews request}
+    B -->|Rejected| C[Request rejected]
+    B -->|Approved| D[Request opened]
+    D --> E[Compatible donors can offer help]
+    E --> F[Hospital contacts and schedules donors]
+    F --> G{Hospital verifies donation}
+    G -->|Not eligible| H[Record ineligibility]
+    H --> E
+    G -->|Donation confirmed| I[Update confirmed units]
+    I --> J{Request fully fulfilled?}
+    J -->|No| E
+    J -->|Yes| K[Mark fulfilled and cancel leftover offers]
 ```
 
----
+### Request states
 
-## 2. Donor matching (rule-based, **not** machine learning)
+Requests can progress from pending hospital approval to open, partially fulfilled, and fulfilled. Rejected, cancelled, and expired states are also supported.
 
-`utils/matching.py`. Hard filters first, then an explainable score that only *orders* what passed.
+### Donor-response states
 
-* **Hard filters (never overridden):** ABO/Rh red-cell compatibility, active account, marked available,
-  configurable rest interval since the last donation, not deferred by a hospital, has not already responded.
-* **Score (weights in `config.MATCH_WEIGHTS`):** same city, exact blood group, no donation on record. Each match carries
-  human-readable reasons shown to the hospital. With no GPS data, proximity is city-level.
-* Compatibility is for **red cells / whole blood**; plasma and platelets differ and are not modelled.
-* The output is a *shortlist for professional verification*; the hospital screens, tests and crossmatches.
-
-| What | Is it AI? |
-|---|---|
-| Compatibility table, filters, ranking score | Rule-based automation (transparent, tested) |
-| Dashboard counts and charts | Analytics (plain SQL aggregates of real records) |
-| Machine learning | **None.** No model is claimed; adding demand forecasting would need real historical data, a baseline and evaluation |
+Responses can progress through interested, contacted, appointment scheduled, and donation completed. Cancellation and ineligibility are alternative outcomes.
 
 ---
 
-## 3. Roles and features
+## 🏗️ Architecture
 
-| Role | Can do |
+BloodLink uses a Python Flask application with a relational database, server-rendered templates, and modular business logic.
+
+```text
+BloodLink/
+├── app.py                 # Application setup, security and CLI commands
+├── config.py              # Environment-driven configuration
+├── models/                # Database models
+├── routes/                # Public, authentication and role-specific routes
+├── utils/
+│   ├── allocation.py      # Donation totals and allocation rules
+│   ├── matching.py        # Compatibility filters and ranking
+│   ├── notifications.py   # Notification workflows
+│   ├── mailer.py          # Email delivery
+│   ├── privacy.py         # Privacy-related workflows
+│   ├── maintenance.py     # Maintenance and retention tasks
+│   └── ...                # Validation, authentication and rate limiting
+├── templates/             # Jinja2 HTML templates
+├── static/                # CSS, JavaScript and self-hosted assets
+├── tests/                 # Automated test suite
+├── docs/                  # Architecture, setup and compliance documentation
+├── scripts/               # Supporting scripts
+├── requirements.txt
+├── requirements-dev.txt
+├── render.yaml
+└── README.md
+```
+
+### Technology stack
+
+| Layer | Technology |
 |---|---|
-| **Patient / family** | Register (18+), post a request (blood group, units, hospital, urgency, deadline), see approval status, per-request progress (required / pledged / confirmed / remaining), donor offers, updates; cancel with history kept; export or delete their data |
-| **Donor** | Register with explicit consents, set availability, see compatible open requests (no patient details), offer to help or cancel an offer, see history and verified donations, choose whether contact details are shared and whether to get email, export or delete their data |
-| **Hospital** | Dashboard, approve/reject requests, contact / schedule / screen donors, mark ineligible (with optional deferral), **confirm donations**, close a request with a reason, see who verified what and when |
-| **Admin** | Verify hospitals, manage accounts (erasure keeps counts anonymous), database-driven metrics, charts, activity log, **privacy inbox** for data requests and contact messages |
+| Language | Python |
+| Web framework | Flask 3 |
+| ORM and database | Flask-SQLAlchemy, SQLAlchemy 2 |
+| Databases | SQLite for development; PostgreSQL for production and database testing |
+| Templates | Jinja2 |
+| Frontend | HTML, CSS, JavaScript, Bootstrap 5 |
+| Charts and icons | Chart.js, Font Awesome Free |
+| Migrations | Alembic through Flask-Migrate |
+| Testing | pytest |
+| Production hosting configuration | Render with an external PostgreSQL database |
 
-### Chat (donor, patient and hospital)
+Frontend assets are self-hosted, according to the project documentation.
 
-Once a donor offers to help, a private conversation opens for that one offer. The donor, the patient's family and the
-hospital can write; nobody else can read it, and an administrator only after someone **reports** it (admins can then
-lock the thread). Chat is for coordination only: it never changes a request or counts blood, and messages never go into
-notifications. Delivery is by short polling (about 4 s), which needs no WebSocket server and works on any host.
+### Does BloodLink use AI?
 
-* **Live timeline.** Hospital and donor actions (offer made, contacted, appointment scheduled, donation confirmed,
-  cancelled, request closed) appear in the thread as automatic lines. Screening notes are never copied into chat.
-* **Donation plan card.** Hospital name and address, appointment time (updates live), a *Directions* link and an
-  *Add to calendar* (.ics) button.
-* **Quick replies.** One tap for "I'm on my way", "I've arrived", "Running late", "Thank you" and similar.
-* **Share my location (donor and patient only).** Asks for confirmation, sends **one** position, never tracks. The
-  hospital can see it, administrators never see coordinates. It is hidden after 6 hours and erased after 24 hours
-  (configurable). It opens in Google Maps or OpenStreetMap; no map tiles or third-party scripts are loaded.
-* **Urdu and Sindhi.** Messages display right-to-left automatically.
-* Patients are shown to donors as initials only. The thread becomes read-only when the offer is cancelled, the request
-  closes or the hospital confirms the donation. Messages are rate limited, HTML-escaped, included in data export,
-  erased with the account, and deleted 90 days after the request closes.
+BloodLink currently combines rule-based automation and analytics. Its compatibility filtering, ranking, form assistance, and scam-flagging features are rule-based. Dashboard charts aggregate database records.
 
-**Using VS Code?** Follow [docs/VSCODE.md](docs/VSCODE.md): open the folder, pick the `venv` interpreter, press **F5**.
+The optional translation feature uses an external language-model API. **BloodLink does not claim to have a trained machine-learning model for donor matching or demand forecasting.**
 
-## 3b. Advanced features (added after the chat)
+---
 
-| Area | What you get |
-|---|---|
-| **Matching** | Distance-aware ranking (built-in city centres, optional exact hospital position and donor area rounded to ~1 km), "available now" boost, small penalty for recorded no-shows. Every match shows its reasons. |
-| **Emergencies** | Urgent/Critical requests nobody answers are **escalated automatically**: after 30 min donors within 50 km get SMS/WhatsApp/push/email (if they opted in), after 2 h every compatible donor. The hospital and patient are told. |
-| **Trust** | **QR check-in** at the hospital (arrival only), no-show record, **donation certificate PDF** with a verification code and a public verify page (`/verify`). Only hospital-confirmed donations count. |
-| **Reaching people** | SMS and WhatsApp (Twilio), email, **installable app (PWA) with push notifications**, appointment reminders 24 h and 2 h before. All opt-in and off until configured. |
-| **Accounts** | Forgot-password and email-confirmation links, **two-factor login** (authenticator app + recovery codes), optional `REQUIRE_2FA_ROLES`. |
-| **AI** | *Paste a message to fill the request form* (rules, offline), automatic **money/scam flagging** in chat (rules, offline), optional **Translate** button English/Urdu/Sindhi using the Claude API (needs `ANTHROPIC_API_KEY`). |
-| **Hospitals** | Blood stock (public `/stock`), donation camps with sign-ups (`/camps`), analytics and CSV export. |
-| **Donors** | Badges, donation streak, next-eligible countdown, camps, certificates. |
-| **Interface** | English, **Urdu and Sindhi** (right-to-left). Navigation, sign-in, chat and quick replies are translated; the rest falls back to English. The Urdu/Sindhi wording is a draft: please have a native speaker review it. |
-| **Platform** | Public read-only **REST API** with OpenAPI (`/api/v1/docs`), Alembic migrations, optional Redis rate limiting, JSON logs with request ids, optional Sentry. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). |
+## 🔐 Security, privacy, and responsible use
 
-### Configuration (all optional except `SECRET_KEY` and `DATABASE_URL`)
+The project includes features intended to support safer handling of personal information:
 
-| Variable | Turns on |
-|---|---|
-| `NOTIFY_PROVIDER=twilio` + `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_SMS_FROM`, `TWILIO_WHATSAPP_FROM` | SMS and WhatsApp (`log` only prints them, for testing) |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Push. Make keys with `python scripts/gen_vapid_keys.py` |
-| `ANTHROPIC_API_KEY` (`AI_MODEL`, `AI_DAILY_LIMIT`) | The Translate button |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (+ `PUBLIC_BASE_URL`) | Real email for alerts, password reset and confirmation. Put them in a `.env` file; see [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md). Without SMTP the links are printed in the terminal. |
-| `REDIS_URL` | Shared rate limits across workers |
-| `SENTRY_DSN` | Error tracking (personal data off) |
-| `LOG_FORMAT=json` | One JSON log line per event |
-| `REQUIRE_2FA_ROLES=admin,hospital` | Mandatory two-factor login for those roles |
-| `USE_ALEMBIC=1` | Schema managed by `flask db upgrade` |
+- Role-based and object-level authorization.
+- CSRF protection and security-related HTTP headers.
+- Configurable secure cookies and HTTPS-related production settings.
+- Explicit consent records and policy-version tracking.
+- Restricted display of patient and donor contact information.
+- Account data export and deletion workflows.
+- Configurable data retention and cleanup.
+- Rate limiting and audit logging.
+- Notification deduplication and reduced exposure of sensitive details.
+- Self-hosted frontend assets and a configured Content Security Policy.
 
-### Background jobs
+Read `docs/COMPLIANCE_CHECKLIST.md` for the project's compliance checklist and remaining actions.
+
+> **Important:** These are implemented project features, not a certification of regulatory compliance or proof of security against every attack. Policies require appropriate legal review, and the application requires further operational and security validation before real-world use.
+
+---
+
+## ⚙️ Installation
+
+### Prerequisites
+
+- Python 3.12 recommended for the documented setup.
+- Git.
+- A terminal or VS Code.
+- A supported database configuration.
+
+### 1. Clone the repository
 
 ```bash
-flask --app app jobs                 # all jobs once; schedule every 5 minutes (render.yaml does this)
-flask --app app jobs --only deliver  # just one: expire, reminders, escalate, deliver, cleanup
+git clone https://github.com/alimemonnn/BloodLink.git
+cd BloodLink
 ```
 
-### Migrations
+### 2. Create and activate a virtual environment
 
-```bash
-flask --app app db upgrade           # new database
-flask --app app db stamp head        # database created by an older version: adopt it once, then use upgrade
-flask --app app db migrate -m "..."  # after changing a model
-```
+**Windows CMD:**
 
-Notifications are database-backed, deduplicated by key, and never contain patient names or medical details.
-Optional email goes only to opted-in donors and always has a one-click unsubscribe.
-
----
-
-## 4. Privacy, consent and policies (what was added)
-
-Policy pages: `/privacy`, `/terms`, `/refund-policy`, `/cookies`, `/accessibility`, `/licenses`, `/data-request`.
-See **[docs/COMPLIANCE_CHECKLIST.md](docs/COMPLIANCE_CHECKLIST.md)** for the full 20-point mapping and the
-things *you* must still do (business email, legal review).
-
-Highlights: cookie notice (only 2 first-party necessary cookies, no trackers), unticked consent boxes recorded with
-policy version, 18+ confirmation and guardian confirmation for minors' requests, public pages show patient initials
-only, donor phone/email shown only with the donor's consent, self-service **export and deletion**, public deletion
-request form, retention job, no third-party scripts/fonts (CSP enforced), licence texts shipped.
-
----
-
-## 5. Technology
-
-Python 3.12 · Flask 3 · Flask-SQLAlchemy / SQLAlchemy 2 · SQLite (dev) / PostgreSQL (prod) · Jinja2 ·
-Bootstrap 5 · Chart.js · Font Awesome Free · all assets self-hosted.
-
-```
-app.py            application factory, CSP/CSRF, safe additive migration, CLI commands
-config.py         settings (env-driven); TestingConfig
-models/           Donor, Patient, Hospital, Admin, BloodRequest, DonationResponse, Notification, compliance tables
-routes/           public, auth, donor, patient, hospital, admin, legal, account
-utils/            allocation (core), matching, notifications, mailer, privacy, maintenance, validators, auth, ratelimit
-templates/ static/  UI; static/vendor/licenses holds third-party licence texts
-tests/            pytest suite (fake data, temp databases)
-docs/             audit report, compliance checklist, presentation guide
-```
-
-**Database (schema changes are additive):** new columns on `donors`, `patients`, `hospitals`, `blood_requests`,
-`donation_responses`, `notifications`; new tables `consent_records`, `contact_messages`, `data_requests`,
-`account_notifications`, `audit_logs`. One response row per donor per request (a cancelled donor re-opens the *same* row).
-
----
-
-## 6. Install, run, test
-
-```bash
+```bat
 python -m venv venv
-venv\Scripts\activate            # Windows      (macOS/Linux: source venv/bin/activate)
-pip install -r requirements-dev.txt
-python seed.py                   # fake demo data into an EMPTY database
-python app.py                    # http://127.0.0.1:5000
-python -m pytest                 # automated tests (SQLite)
-TEST_DATABASE_URL=postgresql://user:pass@host/db python -m pytest   # same suite on PostgreSQL
-python test_workflows.py && python test_new_features.py   # original scripts (also updated)
-flask --app app check-consistency   # totals agree with donation records
-flask --app app retention-cleanup   # run daily in production
+venv\Scripts\activate
 ```
 
-`seed.py` refuses to touch a database that already has data (use `python seed.py --reset` and type YES to wipe a
-*local* database) and refuses to run in production.
+**macOS / Linux:**
 
-### Environment variables
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
-See `.env.example`. Required in production: `SECRET_KEY`, `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
-Recommended: `BUSINESS_EMAIL` (shown in policies and footer), `BUSINESS_PHONE`, `BUSINESS_REGISTRATION`.
-Optional email: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `PUBLIC_BASE_URL`.
+### 3. Install dependencies
 
-### Upgrading an existing database (safe migration)
+```bash
+python -m pip install -r requirements-dev.txt
+```
 
-1. **Back up first:** copy `database.db` (SQLite) or take a Neon/Supabase snapshot.
-2. Replace the code and start the app. `db.create_all()` creates the new tables; `_migrate_schema()` only **adds**
-   columns (nullable or with defaults) and back-fills them. It never drops or rewrites a table.
-3. On SQLite it also writes `database.db.pre-migration-<timestamp>.bak` before changing anything.
-4. Back-fills: completed donations get `units_collected = 1`; old "Open" requests that already had verified donations
-   become *Partially Fulfilled*; requests closed by the old one-click flow are flagged `closed_reason='legacy'`
-   (their unit records never existed, so they are flagged, not rewritten).
-5. Run `flask --app app check-consistency`. Re-running the migration is a harmless no-op.
+### 4. Configure environment variables
 
-*Limitation:* new CHECK constraints exist only in freshly created databases (SQLite cannot add them to an existing
-table); the same rules are enforced in code. The whole test suite, including the two-thread race tests on the last unit,
-also passes on a live PostgreSQL 16 (`TEST_DATABASE_URL`, and the CI workflow runs it on every push).
+Copy `.env.example` to `.env` and configure the values required by your environment.
 
-## 7. Deployment (Render + Neon)
+At minimum, the application configuration requires:
 
-Unchanged in spirit: set `DATABASE_URL`, `SECRET_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` (+ `BUSINESS_EMAIL`,
-`PUBLIC_BASE_URL`); `render.yaml` uses `/healthz` as the health check. Production mode (`RENDER=true` or
-`BLOODLINK_ENV=production`) turns on secure cookies, HSTS, proxy headers and refuses to start without a secret key.
-Run `flask --app app retention-cleanup` on a daily schedule. Free hosts sleep when idle; open the site before a demo.
-Demo data on a live database: run `python seed.py` against an *empty* database **before** setting `ADMIN_EMAIL`.
+```dotenv
+SECRET_KEY=replace-with-a-long-random-secret
+DATABASE_URL=your-database-connection-string
+```
 
-## 8. Demo accounts (local fake data only)
+Production configuration also requires the documented administrator credentials and other applicable settings.
 
-| Role | Email | Password |
-|---|---|---|
-| Admin | admin@bloodlink.com | Admin123 |
-| Hospital | civil@sukkurhospital.com | Hospital123 |
-| Donor | ahmed.ali@example.com | Donor123 |
-| Patient | rizwan@example.com | Patient123 |
+**Never commit real secrets, SMTP credentials, database passwords, API keys, or production environment files to GitHub.**
 
-Delete or change these before any real use. The seed includes a **3-unit O+ request with 2 units already verified**,
-so you can confirm the last one live.
+### 5. Prepare demo data
 
-## 9. Known limitations (please read)
+For an empty local development database:
 
-* Not a medical device; eligibility rules (e.g. the 90-day interval) are configurable placeholders to be confirmed by
-  a blood bank.
-* **Outside services are untested against live accounts.** SMS/WhatsApp (Twilio), web push, the Claude translation call,
-  Redis and Sentry are written, covered by tests with fakes, and off by default, but have not been run against the real
-  services. Test each once with your own keys before relying on it.
-* Proximity uses built-in city centres, or an exact hospital position and a donor area rounded to ~1 km. No routing or
-  live traffic. "Directions" and shared locations open Google Maps or OpenStreetMap.
-* The Urdu and Sindhi texts are a first draft and only cover navigation, sign-in, chat and quick replies. They have not
-  been reviewed by a native speaker and the right-to-left layout has not been checked on a device with Arabic fonts.
-* QR check-in uses the browser's built-in scanner (Chrome/Edge/Android). Elsewhere type the short code.
-* Blood stock is self-reported by hospitals and can be out of date; the pages say so.
-* Policies are drafted for this project and are **not legal advice**; have them reviewed before real use.
-* Chat uses polling, not WebSockets: messages can take up to about 4 seconds to appear.
-* Shared location and push need https (Render provides it) and the person's browser permission.
-* Accessibility: the main pages for every role pass automated axe-core checks (WCAG 2.1 A/AA), but this is not a
-  substitute for a review with real assistive-technology users.
+```bash
+python seed.py
+```
 
-## 10. Future work (not built yet)
+The seed script is intended for local demonstration data. It refuses to seed a database that already contains data and refuses to run in production. Review its behavior before using any reset option.
 
-Live-provider testing of every optional service, a native-speaker review and full interface translation, WebSocket/SSE
-chat, hospital staff accounts with roles, an official donor-eligibility questionnaire reviewed by a blood bank, payment-free
-volunteer driver coordination, and a mobile app wrapper.
+### 6. Start the application
 
-## 11. Contributing and licence
+```bash
+python app.py
+```
 
-MIT licensed (see [LICENSE](LICENSE)). Contributions welcome: read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+Open:
+
+`http://127.0.0.1:5000`
+
+For VS Code setup and debugging, see [`docs/VSCODE.md`](docs/VSCODE.md).
+
+---
+
+## 🧪 Testing
+
+BloodLink includes automated tests for application workflows, database behavior, and core business rules.
+
+Run the test suite locally:
+
+```bash
+python -m pytest -q
+```
+
+The repository also includes original workflow test scripts:
+
+```bash
+python test_workflows.py
+python test_new_features.py
+```
+
+Check donation-record consistency:
+
+```bash
+flask --app app check-consistency
+```
+
+### Database testing
+
+SQLite is used for local development and testing. PostgreSQL is also covered by the GitHub Actions workflow.
+
+For PostgreSQL testing, configure a dedicated test database and set `TEST_DATABASE_URL` to its connection string before running the suite.
+
+Example for Bash:
+
+```bash
+export TEST_DATABASE_URL="postgresql://user:password@localhost:5432/bloodlink_test"
+python -m pytest -q
+```
+
+Example for Windows CMD:
+
+```bat
+set TEST_DATABASE_URL=postgresql://user:password@localhost:5432/bloodlink_test
+python -m pytest -q
+```
+
+Use a disposable test database, not a production database.
+
+### Continuous integration
+
+The GitHub Actions workflow in `.github/workflows/ci.yml` is configured to run SQLite and PostgreSQL test jobs on pushes and pull requests. It also includes a PostgreSQL migration check.
+
+See [GitHub Actions](https://github.com/alimemonnn/BloodLink/actions) for the actual status of the latest run.
+
+---
+
+## 🗄️ Database migrations
+
+BloodLink supports database schema management through Flask-Migrate and Alembic.
+
+Upgrade a database managed by migrations:
+
+```bash
+flask --app app db upgrade
+```
+
+Generate a migration after a model change:
+
+```bash
+flask --app app db migrate -m "Describe the schema change"
+```
+
+For a database created outside the migration history, `flask db stamp head` may be appropriate only after verifying that the existing schema matches the expected migration state.
+
+### Before upgrading an existing database
+
+1. Back up the database or take a provider snapshot.
+2. Review the migration and application configuration.
+3. Apply the migration using the appropriate database URL.
+4. Run the test suite and `check-consistency`.
+5. Verify the result before using the upgraded application.
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for further technical details.
+
+---
+
+## ☁️ Deployment
+
+The repository includes Render deployment configuration in `render.yaml`. The documented production architecture uses Flask with PostgreSQL.
+
+### Production configuration
+
+Configure the following values in your hosting provider's environment settings:
+
+| Variable | Purpose |
+|---|---|
+| `SECRET_KEY` | Application signing and security |
+| `DATABASE_URL` | Database connection |
+| `ADMIN_EMAIL` | Initial or configured administrator email |
+| `ADMIN_PASSWORD` | Administrator credential configuration |
+| `PUBLIC_BASE_URL` | Public application URL, where required |
+| `BUSINESS_EMAIL` | Contact information shown in applicable pages and policies |
+
+Additional variables enable optional integrations. See `.env.example` and `docs/EMAIL_SETUP.md`.
+
+### Background and maintenance jobs
+
+The application provides commands for background tasks and retention cleanup:
+
+```bash
+flask --app app jobs
+flask --app app retention-cleanup
+```
+
+Configure a suitable schedule for the tasks in your production environment. The repository documents a five-minute job schedule in `render.yaml`; verify the actual hosting configuration before relying on it.
+
+### Before a public launch
+
+- Use a managed PostgreSQL database with appropriate access controls.
+- Set strong production secrets and administrator credentials.
+- Configure real email and any required notification providers.
+- Run database migrations and verify backups.
+- Test password reset and email verification against real accounts.
+- Review authorization, privacy, retention, and incident-response procedures.
+- Confirm that scheduled jobs execute successfully.
+- Remove demo credentials and test data from any public environment.
+
+---
+
+## 🔧 Environment variables and optional integrations
+
+The complete variable list is maintained in `.env.example`. Important optional integrations include:
+
+| Setting | Purpose |
+|---|---|
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Email delivery |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and related settings | SMS and WhatsApp through Twilio |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push notifications |
+| `ANTHROPIC_API_KEY` | Optional translation integration |
+| `REDIS_URL` | Shared rate limiting across workers |
+| `SENTRY_DSN` | Optional error reporting |
+| `LOG_FORMAT=json` | Structured JSON logging |
+| `REQUIRE_2FA_ROLES` | Require two-factor authentication for configured roles |
+| `USE_ALEMBIC=1` | Enable migration-managed schema setup |
+
+Refer to the environment example and setup documentation for required values, defaults, and provider-specific instructions.
+
+---
+
+## ⚠️ Known limitations
+
+BloodLink is an evolving university project. The following limitations should be understood before deployment or real-world use:
+
+- It is not a medical device or medical service.
+- Blood compatibility and donor eligibility must be verified by qualified professionals; configurable application rules are not clinical guidance.
+- Live third-party integrations must be tested with authorized accounts. Passing tests using fakes does not verify live provider behavior.
+- Location ranking uses available location data and does not provide live traffic or route optimization.
+- Urdu and Sindhi translations are drafts and need native-speaker review.
+- QR scanning depends on browser capabilities; manual short-code entry is available where supported by the application.
+- Public blood-stock information may be self-reported and out of date.
+- Privacy policies need legal review before real-world operation.
+- Chat uses polling rather than WebSockets or server-sent events.
+- Accessibility automation does not replace testing with real assistive-technology users.
+- Hosting availability, database persistence, email delivery, and scheduled tasks depend on the actual production configuration.
+
+---
+
+## 🛣️ Future work
+
+Potential next steps include:
+
+- Live-provider integration testing and monitoring.
+- Full interface translation and native-speaker review.
+- Real-time messaging with WebSockets or server-sent events.
+- More granular hospital staff permissions.
+- Blood-bank-reviewed donor screening workflows.
+- Volunteer transport coordination.
+- A mobile application wrapper.
+- Evidence-based demand forecasting, if reliable historical data and a suitable evaluation baseline become available.
+
+These are proposed improvements, not claims about currently implemented functionality.
+
+---
+
+## 🤝 Contributing
+
+Contributions, bug reports, and suggestions are welcome.
+
+1. Review [`CONTRIBUTING.md`](CONTRIBUTING.md).
+2. Check the existing issues before opening a duplicate.
+3. Create a feature branch for your changes.
+4. Add or update tests for behavioral changes.
+5. Run the test suite before submitting a pull request.
+6. Never include secrets, real patient information, or production data in commits or tests.
+
+For security-related concerns, see [`SECURITY.md`](SECURITY.md).
+
+## 📄 License
+
+BloodLink is released under the MIT License. See [`LICENSE`](LICENSE) for the complete license text.
+
+---
+
+<p align="center">
+  <strong>BloodLink</strong><br>
+  <sub>A university project focused on transparent coordination, verified donation records, and responsible software design.</sub>
+</p>
