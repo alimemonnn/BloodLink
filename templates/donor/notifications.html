@@ -1,0 +1,30 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'notifications' %}
+{% block title %}Notifications{% endblock %}
+{% block dash_title %}Notifications{% endblock %}
+{% block dash_subtitle %}Alerts sent when a hospital approves a request matching your blood group{% endblock %}
+{% block sidenav %}{% include "donor/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  {% if notifications %}
+  <ul class="list-group list-group-flush">
+    {% for n in notifications %}
+    <li class="list-group-item">
+      <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+          <p class="mb-1">{{ n.message }}</p>
+          {% if n.request and n.request.status == 'Approved' %}
+          <a class="btn btn-sm btn-blood" href="{{ url_for('donor.requests_feed') }}">Open requests</a>
+          {% endif %}
+        </div>
+        <small class="text-muted text-nowrap">{{ n.created_at.strftime('%d %b %Y, %H:%M') }}</small>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state"><i class="fa-regular fa-bell" aria-hidden="true"></i><p class="mb-0">No notifications yet.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

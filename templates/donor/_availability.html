@@ -1,0 +1,14 @@
+{# "I can donate right now" and the optional approximate area #}
+<div class="panel mb-3" id="availability">
+  <h2 class="h6 mb-2"><i class="fa-solid fa-bolt me-1 text-danger" aria-hidden="true"></i> Can you donate right now?</h2>
+  {% if donor.available_until and donor.available_until > now %}
+  <p class="mb-2">You are marked <strong>available now</strong> until {{ donor.available_until.strftime('%d %b, %H:%M') }} (UTC). Hospitals see you first.</p>
+  <form method="post" action="{{ url_for('engage.available_now') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-sm btn-outline-secondary" type="submit">Remove the mark</button></form>
+  {% else %}
+  <p class="small text-muted mb-2">Tell us you can come in soon, and you rank higher for urgent requests.</p>
+  <form method="post" action="{{ url_for('engage.available_now') }}" class="d-flex flex-wrap gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for h in (2, 6, 12) %}<button class="btn btn-sm btn-outline-navy" name="hours" value="{{ h }}" type="submit">Next {{ h }} hours</button>{% endfor %}
+  </form>
+  {% endif %}
+</div>

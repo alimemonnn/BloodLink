@@ -1,0 +1,17 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'analytics' %}
+{% block title %}Hospital analytics{% endblock %}
+{% block dash_title %}Analytics{% endblock %}
+{% block dash_subtitle %}How your requests and donors are doing{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+{% block dash_content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Requests fulfilled</div><div class="display-6 fw-bold">{{ fulfil.fulfilled }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Average time to fulfil</div><div class="display-6 fw-bold">{{ fulfil.average_hours if fulfil.average_hours is not none else '-' }}<span class="fs-6"> h</span></div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Donor offers</div><div class="display-6 fw-bold">{{ responses.offers }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Offers that became donations</div><div class="display-6 fw-bold">{{ (responses.completion_rate ~ '%') if responses.completion_rate is not none else '-' }}</div></div></div>
+</div>
+<div class="panel"><p class="mb-2">Median time to fulfil: <strong>{{ fulfil.median_hours if fulfil.median_hours is not none else '-' }}</strong> hours &middot; Donor no-shows: <strong>{{ responses.no_shows }}</strong>{% if responses.no_show_rate is not none %} ({{ responses.no_show_rate }}% of booked donors){% endif %}</p>
+  <a class="btn btn-outline-navy" href="{{ url_for('community.hospital_requests_csv') }}"><i class="fa-solid fa-download me-1" aria-hidden="true"></i>Download my requests (CSV)</a>
+  <p class="small text-muted mt-2 mb-0">The file contains no patient or donor details.</p></div>
+{% endblock %}

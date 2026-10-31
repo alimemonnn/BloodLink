@@ -1,0 +1,113 @@
+{% extends "dashboard_base.html" %}
+{% from "_cnic.html" import verified_badge %}
+{% set active = 'requests' %}
+{% block title %}Donors near the hospital{% endblock %}
+{% block dash_title %}Donors near {{ hospital.hospital_name }}{% endblock %}
+{% block dash_subtitle %}Request #{{ blood_request.id }} &middot; needs {{ blood_request.blood_group_required }} &middot; {{ blood_request.units_remaining }} unit{{ '' if blood_request.units_remaining == 1 else 's' }} still needed{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/nearby.js') }}"></script>{% endblock %}
+
+{% block dash_content %}
+<div class="panel mb-3" id="gpsBox" data-autolocate="{{ '1' if source == 'city' else '0' }}" data-key="gps-{{ blood_request.id }}">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <p class="mb-0">
+      <i class="fa-solid fa-location-crosshairs me-1" aria-hidden="true"></i>
+      {% if source == 'gps' %}Distances are measured from <strong>your live GPS location</strong> ({{ gps[0] }}, {{ gps[1] }}).
+      {% elif source == 'saved' %}Distances are measured from the <strong>saved hospital location</strong>.
+      {% else %}Distances are measured from the <strong>centre of {{ hospital.city }}</strong>. Use GPS for exact distances.{% endif %}
+    </p>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-sm btn-blood" type="button" id="gpsUse"><i class="fa-solid fa-crosshairs me-1" aria-hidden="true"></i> Use my GPS location</button>
+      {% if source == 'gps' %}
+      <form method="post" action="{{ url_for('cnic.hospital_save_position', request_id=blood_request.id) }}" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="lat" value="{{ gps[0] }}"><input type="hidden" name="lng" value="{{ gps[1] }}">
+        <button class="btn btn-sm btn-outline-navy" type="submit">Save as hospital location</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  <p class="small text-muted mt-2 mb-0" id="gpsNote" role="status">Your browser will ask for permission. GPS needs https (or localhost). Your location is used only to measure distances and is not stored unless you press Save.</p>
+</div>
+
+<div class="panel mb-3">
+  <form method="get" class="row g-3 align-items-end">
+    {% if gps %}<input type="hidden" name="lat" value="{{ gps[0] }}"><input type="hidden" name="lng" value="{{ gps[1] }}">{% endif %}
+    <div class="col-sm-4 col-md-3">
+      <label class="form-label" for="radius">Distance from the hospital</label>
+      <select class="form-select" id="radius" name="radius">
+        {% for r in radius_choices %}<option value="{{ r }}" {{ 'selected' if radius == r }}>Within {{ r }} km</option>{% endfor %}
+        <option value="0" {{ 'selected' if radius is none }}>Any distance</option>
+      </select>
+    </div>
+    <div class="col-sm-4 col-md-4">
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" id="verified" name="verified" value="1" {{ 'checked' if verified_only }}>
+        <label class="form-check-label" for="verified">Verified donors only</label>
+      </div>
+    </div>
+    <div class="col-sm-4 col-md-5 d-flex gap-2 flex-wrap">
+      <button class="btn btn-blood" type="submit">Update</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('hospital.request_detail', request_id=blood_request.id) }}">Back to request</a>
+    </div>
+  </form>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="panel">
+      <h2 class="h5">Map around the hospital</h2>
+      <svg viewBox="0 0 400 400" class="w-100" style="max-width: 460px;" role="img"
+           aria-label="Radar view with the hospital in the centre and {{ rows|length }} donor{{ '' if rows|length == 1 else 's' }} around it. A table with the same donors follows.">
+        {% for i in (1, 2, 3) %}
+        <circle cx="200" cy="200" r="{{ 55 * i }}" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="3 4"/>
+        <text x="203" y="{{ 200 - 55 * i - 3 }}" font-size="10" fill="currentColor" fill-opacity=".7">{{ (scale / 3 * i)|round(1)|string|replace('.0', '') }} km</text>
+        {% endfor %}
+        <line x1="200" y1="20" x2="200" y2="380" stroke="currentColor" stroke-opacity=".15"/>
+        <line x1="20" y1="200" x2="380" y2="200" stroke="currentColor" stroke-opacity=".15"/>
+        <text x="200" y="14" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">N</text>
+        {% for n in rows if n.x is not none %}
+        <g>
+          <title>{{ n.donor.name }}, {{ n.donor.blood_group }}, about {{ '%.1f'|format(n.km) }} km{{ ', verified' if n.verified }}</title>
+          <circle cx="{{ n.x }}" cy="{{ n.y }}" r="9" fill="{{ '#198754' if n.verified else '#6c757d' }}" stroke="#ffffff" stroke-width="1.5"/>
+          <text x="{{ n.x }}" y="{{ n.y + 3 }}" text-anchor="middle" font-size="7.5" font-weight="700" fill="#ffffff">{{ n.donor.blood_group }}</text>
+        </g>
+        {% endfor %}
+        <circle cx="200" cy="200" r="12" fill="#c0152f" stroke="#ffffff" stroke-width="2"/>
+        <path d="M200 194v12M194 200h12" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <p class="small mb-1"><span class="badge bg-danger">+</span> {{ hospital.hospital_name }} &nbsp; <span class="badge bg-success">&nbsp;</span> Verified donor &nbsp; <span class="badge bg-secondary">&nbsp;</span> Not verified</p>
+      <p class="small text-muted mb-0">
+        {% if not has_position %}The hospital has no position saved, so distances cannot be drawn.{% else %}North is at the top.{% endif %}
+        Donors who gave an approximate area are placed by it (about 1 km). Others are placed by the centre of their city, so their distance is approximate. No donor&rsquo;s exact location is ever stored.</p>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="panel">
+      <h2 class="h5">{{ rows|length }} donor{{ '' if rows|length == 1 else 's' }} found, nearest first</h2>
+      <p class="small text-muted">Only donors who are compatible, available, rested and not already answering this request are listed. You still screen and confirm every donation.</p>
+      {% if rows %}
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <caption class="visually-hidden">Donors near the hospital</caption>
+          <thead><tr><th scope="col">Donor</th><th scope="col">Group</th><th scope="col">Distance</th><th scope="col">Contact</th></tr></thead>
+          <tbody>
+          {% for n in rows %}
+          <tr>
+            <th scope="row">{{ n.donor.name }} {{ verified_badge(n.donor) }}<div class="small text-muted fw-normal">{{ n.donor.city }}{% if n.donor.area %}, {{ n.donor.area }}{% endif %}</div></th>
+            <td><span class="blood-chip sm">{{ n.donor.blood_group }}</span></td>
+            <td class="text-nowrap">{% if n.km is not none %}{{ '%.1f'|format(n.km) }} km{% if not n.precise %}<div class="small text-muted">city centre</div>{% endif %}{% else %}<span class="text-muted">unknown</span>{% endif %}</td>
+            <td class="text-nowrap">{% if n.donor.share_contact_consent %}{{ n.donor.phone }}{% else %}<span class="text-muted small">Not shared</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="fa-regular fa-face-meh" aria-hidden="true"></i><p class="mb-0">No matching donors in this range. Try a larger distance.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

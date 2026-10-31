@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Unsubscribe{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width: 560px;">
+    {% if state == 'confirm' %}
+    <h1>Unsubscribe from email alerts</h1>
+    <p>You will stop receiving BloodLink emails. In-app notifications are not affected.</p>
+    <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-blood" type="submit">Unsubscribe me</button></form>
+    {% elif state == 'done' %}
+    <h1>You are unsubscribed</h1>
+    <p>We will not send you email alerts any more. You can turn them on again in your donor profile.</p>
+    <a class="btn btn-outline-navy" href="{{ url_for('public.index') }}">Back to BloodLink</a>
+    {% else %}
+    <h1>This link is not valid</h1>
+    <p>It may be incomplete. Log in and change email alerts in your donor profile, or <a href="{{ url_for('public.contact') }}">contact us</a>.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

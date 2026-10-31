@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ camp.title }}{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 820px;">
+  <p class="small mb-1"><a href="{{ url_for('community.camps') }}">&larr; All camps</a></p>
+  <h1>{{ camp.title }}</h1>
+  <p class="lead mb-2">{{ camp.hospital.hospital_name }}</p>
+  <div class="panel mb-3">
+    <p class="mb-1"><i class="fa-regular fa-calendar me-2" aria-hidden="true"></i><strong>{{ camp.starts_at.strftime('%A %d %B %Y') }}</strong>, {{ camp.starts_at.strftime('%H:%M') }} to {{ camp.ends_at.strftime('%H:%M') }} (local time)</p>
+    <p class="mb-1"><i class="fa-solid fa-location-dot me-2" aria-hidden="true"></i>{{ camp.venue }}, {{ camp.city }}</p>
+    <p class="mb-2"><i class="fa-solid fa-users me-2" aria-hidden="true"></i>{{ camp.spots_left }} of {{ camp.capacity }} places left{% if camp.waitlist %} &middot; {{ camp.waitlist|length }} waiting{% endif %}</p>
+    {% if camp.description %}<p style="white-space: pre-wrap;">{{ camp.description }}</p>{% endif %}
+    {% if mine and mine.status == 'Waitlist' %}<div class="alert alert-warning py-2 small">You are number {{ camp.waitlist.index(mine) + 1 }} on the waiting list. We will tell you if a place opens.</div>{% endif %}
+    <div class="d-flex flex-wrap gap-2">
+      {% with c=camp %}{% include "community/_camp_action.html" %}{% endwith %}
+      <a class="btn btn-outline-navy" href="{{ directions }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-diamond-turn-right me-1" aria-hidden="true"></i>Directions</a>
+      <a class="btn btn-outline-navy" href="{{ url_for('community.camp_ics', camp_id=camp.id) }}"><i class="fa-regular fa-calendar-plus me-1" aria-hidden="true"></i>Add to calendar</a>
+    </div>
+  </div>
+  <div class="panel"><h2 class="h6">Before you come</h2>
+    <ul class="mb-0 small"><li>Bring a photo ID.</li><li>Eat a normal meal and drink water unless the hospital tells you otherwise.</li><li>The hospital screens everyone on the day and decides who can donate.</li><li>A donation is counted only after the hospital records it. You can then download a certificate.</li></ul></div>
+</div></section>
+{% endblock %}

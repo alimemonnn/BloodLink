@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Account security{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 720px;">
+  <h1>Account security</h1>
+  {% if role == 'donor' %}
+  {% from "_cnic.html" import status_badge, verified_badge %}
+  {% set rec = user.cnic %}
+  <div class="panel mb-3" id="cnic">
+    <h2 class="h5">CNIC verification {{ status_badge(rec) }}</h2>
+    {% if rec and rec.is_approved %}
+      <p class="mb-1">{{ verified_badge(user) }}</p>
+      <p class="mb-0">Your CNIC <strong>{{ rec.masked_number }}</strong> was approved. Hospitals and patients see the Verified donor badge next to your name.</p>
+    {% else %}
+      {% if rec and rec.status == 'Pending' %}
+        <p>Your CNIC <strong>{{ rec.masked_number }}</strong> is waiting for an administrator. You can still donate meanwhile. You may upload again to replace it.</p>
+      {% elif rec and rec.status == 'Rejected' %}
+        <div class="alert alert-danger"><strong>Not approved.</strong> {{ rec.reject_reason or 'Please upload a clearer image.' }}</div>
+      {% else %}
+        <p>Upload a clear photo or scan of your CNIC to earn the Verified donor badge. You can donate without it, but the badge will not show.</p>
+      {% endif %}
+      <form method="post" action="{{ url_for('cnic.donor_cnic') }}" enctype="multipart/form-data" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="cnic_number">CNIC number</label>
+            <input class="form-control" id="cnic_number" name="cnic_number" inputmode="numeric" autocomplete="off" maxlength="15" placeholder="42101-1234567-1" value="{{ rec.cnic_number if rec else '' }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="cnic_file">Photo or scan of your CNIC</label>
+            <input class="form-control" id="cnic_file" name="cnic_file" type="file" accept="image/jpeg,image/png,application/pdf" required>
+            <div class="form-text">JPG, PNG or PDF, up to 3 MB. Stored encrypted; only an administrator can open it.</div>
+          </div>
+        </div>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="cnic_consent" name="cnic_consent">
+          <label class="form-check-label" for="cnic_consent">I allow BloodLink to store my CNIC number and image to verify my identity.</label>
+        </div>
+        <button class="btn btn-blood mt-3" type="submit"><i class="fa-solid fa-upload me-1" aria-hidden="true"></i> Upload and verify</button>
+      </form>
+    {% endif %}
+  </div>
+  {% endif %}
+  <div class="panel mb-3" id="pushBox" data-csrf="{{ csrf_token() }}">
+    <h2 class="h5">Alerts on this device</h2>
+    <p>Get a notification here when a request matches your group or something changes on your offer. It contains no names or medical details.</p>
+    <button class="btn btn-sm btn-outline-navy" id="pushToggle" type="button">Turn on alerts on this device</button>
+    <p class="small text-muted mt-2 mb-0" id="pushNote" role="status"></p>
+  </div>
+  <div class="panel">
+    <h2 class="h5">Two-factor login {% if user.has_2fa %}<span class="badge bg-success">On</span>{% else %}<span class="badge bg-secondary">Off</span>{% endif %}</h2>
+    {% if required and not user.has_2fa %}<div class="alert alert-warning">Two-factor login is required for your account type. Please turn it on.</div>{% endif %}
+    {% if user.has_2fa %}
+    <p>You will be asked for a code from your authenticator app when you log in. Recovery codes left: <strong>{{ codes_left }}</strong>.</p>
+    <form method="post" action="{{ url_for('security.new_codes') }}" class="mb-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="pw1">Password</label>
+      <input class="form-control mb-2" id="pw1" name="password" type="password" autocomplete="current-password" required>
+      <button class="btn btn-sm btn-outline-navy" type="submit">Make new recovery codes</button></form>
+    {% if not required %}
+    <form method="post" action="{{ url_for('security.disable_2fa') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="pw2">Password</label>
+      <input class="form-control mb-2" id="pw2" name="password" type="password" autocomplete="current-password" required>
+      <label class="form-label" for="cd2">Current code or a recovery code</label>
+      <input class="form-control mb-2" id="cd2" name="code" required>
+      <button class="btn btn-sm btn-outline-danger" type="submit">Turn off two-factor login</button></form>
+    {% endif %}
+    {% else %}
+    <p>Adds a second step at login, so a stolen password alone is not enough. Recommended for hospitals and administrators, who confirm donations.</p>
+    <form method="post" action="{{ url_for('security.start_2fa') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-blood" type="submit">Set up two-factor login</button></form>
+    {% endif %}
+  </div>
+</div></section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/push.js') }}" defer></script>{% endblock %}

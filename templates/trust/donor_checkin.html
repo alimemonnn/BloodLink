@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}My check-in code{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 560px;">
+  <h1>Your check-in code</h1>
+  <p class="lead">Show this to the hospital staff when you arrive. They scan it, or you read out the short code.</p>
+  <div class="panel text-center">
+    <img src="{{ qr }}" width="260" height="260" alt="Check-in QR code for request #{{ resp.request_id }}">
+    <p class="display-6 fw-bold my-2" aria-label="Check-in code">{{ code }}</p>
+    <p class="mb-1">{{ resp.request.hospital.hospital_name }}</p>
+    <p class="text-muted">{{ resp.appointment_at.strftime('%A %d %b %Y, %H:%M') }}</p>
+    <p class="small text-muted mb-0">The code works only for this appointment and only at this hospital. Checking in does not count the donation; the hospital confirms that after collection.</p>
+  </div>
+  <p class="mt-3"><a href="{{ url_for('donor.history') }}">Back to my responses</a></p>
+</div></section>
+{% endblock %}

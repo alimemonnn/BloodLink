@@ -1,0 +1,30 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'camps' %}
+{% block title %}My donation camps{% endblock %}
+{% block dash_title %}Donation camps{% endblock %}
+{% block dash_subtitle %}Plan an event and see who signed up{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+{% block dash_content %}
+<div class="panel mb-3"><h2 class="h5">New camp</h2>
+  <form method="post" novalidate class="row g-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-8"><label class="form-label" for="title">Title</label><input class="form-control" id="title" name="title" maxlength="140" required></div>
+    <div class="col-md-4"><label class="form-label" for="capacity">Places</label><input class="form-control" id="capacity" name="capacity" type="number" min="1" max="5000" value="50" required></div>
+    <div class="col-md-6"><label class="form-label" for="venue">Venue</label><input class="form-control" id="venue" name="venue" maxlength="200" required></div>
+    <div class="col-md-6"><label class="form-label" for="ccity">City</label><input class="form-control" id="ccity" name="city" maxlength="80" value="{{ city }}" required></div>
+    <div class="col-md-6"><label class="form-label" for="starts_at">Starts (local time)</label><input class="form-control" id="starts_at" name="starts_at" type="datetime-local" required></div>
+    <div class="col-md-6"><label class="form-label" for="ends_at">Ends (local time)</label><input class="form-control" id="ends_at" name="ends_at" type="datetime-local" required></div>
+    <div class="col-12"><label class="form-label" for="description">Details (optional)</label><textarea class="form-control" id="description" name="description" rows="2" maxlength="600"></textarea></div>
+    <div class="col-12"><button class="btn btn-blood" type="submit">Publish camp</button></div>
+  </form></div>
+{% for c in camps %}{% set st = stats[c.id] %}
+<div class="panel mb-3"><div class="d-flex justify-content-between flex-wrap gap-2">
+  <div><h2 class="h6 mb-1">{{ c.title }} {% if c.is_cancelled %}<span class="badge bg-secondary">Cancelled</span>{% endif %}</h2>
+    <div class="small text-muted">{{ c.venue }}, {{ c.city }} &middot; {{ c.starts_at.strftime('%d %b %Y, %H:%M') }}</div>
+    <div class="small mt-1">{{ st.signed }} / {{ c.capacity }} signed up{% if st.waiting %} &middot; {{ st.waiting }} waiting{% endif %} &middot; {{ st.donated }} donated ({{ st.units }} unit{{ 's' if st.units != 1 }}){% if st.no_show %} &middot; {{ st.no_show }} no-show{% endif %}</div></div>
+  {% if not c.is_cancelled %}<div class="d-flex flex-wrap gap-2 align-items-start">
+    <a class="btn btn-sm btn-outline-navy" href="{{ url_for('community.camp_roster', camp_id=c.id) }}"><i class="fa-solid fa-list-check me-1" aria-hidden="true"></i>Roster</a>
+    <a class="btn btn-sm btn-outline-navy" href="{{ url_for('community.edit_camp', camp_id=c.id) }}"><i class="fa-regular fa-pen-to-square me-1" aria-hidden="true"></i>Edit</a>
+    <form method="post" action="{{ url_for('community.cancel_camp', camp_id=c.id) }}" data-confirm="Cancel this camp and tell everyone who signed up?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Cancel camp</button></form></div>{% endif %}</div>
+</div>
+{% else %}<p class="text-muted">You have not planned a camp yet.</p>{% endfor %}
+{% endblock %}

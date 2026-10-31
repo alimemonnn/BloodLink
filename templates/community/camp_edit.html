@@ -1,0 +1,20 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'camps' %}
+{% block title %}Edit camp{% endblock %}
+{% block dash_title %}Edit camp{% endblock %}
+{% block dash_subtitle %}{{ camp.signups|length }} sign-up(s). Changing the time or place tells everyone who signed up.{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+{% block dash_content %}
+<div class="panel">
+  <form method="post" novalidate class="row g-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-8"><label class="form-label" for="title">Title</label><input class="form-control" id="title" name="title" maxlength="140" value="{{ request.form.get('title', camp.title) }}" required></div>
+    <div class="col-md-4"><label class="form-label" for="capacity">Places</label><input class="form-control" id="capacity" name="capacity" type="number" min="1" max="5000" value="{{ request.form.get('capacity', camp.capacity) }}" required></div>
+    <div class="col-md-6"><label class="form-label" for="venue">Venue</label><input class="form-control" id="venue" name="venue" maxlength="200" value="{{ request.form.get('venue', camp.venue) }}" required></div>
+    <div class="col-md-6"><label class="form-label" for="city">City</label><input class="form-control" id="city" name="city" maxlength="80" value="{{ request.form.get('city', camp.city) }}" required></div>
+    <div class="col-md-6"><label class="form-label" for="starts_at">Starts (local time)</label><input class="form-control" id="starts_at" name="starts_at" type="datetime-local" value="{{ request.form.get('starts_at', camp.starts_at.strftime('%Y-%m-%dT%H:%M')) }}" required></div>
+    <div class="col-md-6"><label class="form-label" for="ends_at">Ends (local time)</label><input class="form-control" id="ends_at" name="ends_at" type="datetime-local" value="{{ request.form.get('ends_at', camp.ends_at.strftime('%Y-%m-%dT%H:%M')) }}" required></div>
+    <div class="col-12"><label class="form-label" for="description">Details</label><textarea class="form-control" id="description" name="description" rows="3" maxlength="600">{{ request.form.get('description', camp.description or '') }}</textarea></div>
+    <div class="col-12"><button class="btn btn-blood" type="submit">Save changes</button> <a class="btn btn-link" href="{{ url_for('community.manage_camps') }}">Cancel</a></div>
+  </form>
+</div>
+{% endblock %}

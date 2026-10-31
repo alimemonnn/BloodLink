@@ -1,0 +1,35 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'requests' %}
+{% block title %}Health check{% endblock %}
+{% block dash_title %}Health check: {{ donor.name }}{% endblock %}
+{% block dash_subtitle %}For the {{ what }}. {{ donor.blood_group }} donor{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+{% block dash_content %}
+{% set r = report %}
+<div class="panel">
+  <form method="post" action="{{ post_url }}" novalidate class="row g-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-6"><label class="form-label" for="outcome">Outcome</label>
+      <select class="form-select" id="outcome" name="outcome" required><option value="">Choose...</option>
+        {% for o in outcomes %}<option {{ 'selected' if r and r.outcome == o }}>{{ o }}</option>{% endfor %}</select></div>
+    <div class="col-md-6"><label class="form-label" for="reason">Main reason (if not fit)</label>
+      <select class="form-select" id="reason" name="reason"><option value="">-</option>
+        {% for x in reasons %}<option {{ 'selected' if r and r.reason == x }}>{{ x }}</option>{% endfor %}</select></div>
+    <div class="col-md-4"><label class="form-label" for="deferral_days">Wait how many days? (deferred)</label>
+      <input class="form-control" id="deferral_days" name="deferral_days" inputmode="numeric" maxlength="3"
+        value="{{ r.deferral_days if r and r.deferral_days is defined else ((r.deferral_until - now.date()).days if r and r.deferral_until else '') }}"></div>
+    <div class="col-12"><h2 class="h6 mb-0">Measurements (leave blank if not taken)</h2></div>
+    {% for name, label in labels.items() %}
+    <div class="col-6 col-md-4"><label class="form-label" for="{{ name }}">{{ label }}</label>
+      <input class="form-control" id="{{ name }}" name="{{ name }}" inputmode="decimal" value="{{ r[name] if r and r[name] is not none else '' }}"></div>
+    {% endfor %}
+    <div class="col-12"><label class="form-label" for="message_to_donor">Message for the donor (they can read this)</label>
+      <textarea class="form-control" id="message_to_donor" name="message_to_donor" rows="3" maxlength="600">{{ r.message_to_donor if r and r.message_to_donor else '' }}</textarea></div>
+    <div class="col-12"><label class="form-label" for="internal_note">Private note (only your hospital sees this)</label>
+      <textarea class="form-control" id="internal_note" name="internal_note" rows="2" maxlength="600">{{ r.internal_note if r and r.internal_note else '' }}</textarea></div>
+    <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="shared" name="shared_with_donor" {{ 'checked' if (not r) or r.shared_with_donor }}>
+      <label class="form-check-label" for="shared">Let the donor read this report in their account</label></div>
+      <p class="small text-muted mt-2 mb-0">Do not enter infection test results. Share those with the donor in person. Choosing <em>Temporarily deferred</em> or <em>Not eligible</em> also closes the donor's offer if it is still open.</p></div>
+    <div class="col-12"><button class="btn btn-blood" type="submit">Save health check</button> <a class="btn btn-link" href="{{ back }}">Cancel</a></div>
+  </form>
+</div>
+{% endblock %}

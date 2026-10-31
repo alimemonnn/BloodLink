@@ -1,0 +1,14 @@
+{# "Verified donor" badge: shown only when an administrator approved the donor's CNIC. #}
+{% macro verified_badge(donor) -%}
+{%- if donor is not none and donor.cnic and donor.cnic.status == 'Approved' -%}
+<span class="badge bg-success verified-donor" title="An administrator checked this donor's CNIC"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Verified donor</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro status_badge(record) -%}
+{%- if record is none -%}<span class="badge bg-secondary">No CNIC added</span>
+{%- elif record.status == 'Approved' -%}<span class="badge bg-success"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Approved</span>
+{%- elif record.status == 'Incomplete' -%}<span class="badge bg-secondary">Number added, image missing</span>
+{%- elif record.status == 'Rejected' -%}<span class="badge bg-danger">Rejected</span>
+{%- else -%}<span class="badge bg-warning text-dark">Pending review</span>{%- endif -%}
+{%- endmacro %}

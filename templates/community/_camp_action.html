@@ -1,0 +1,13 @@
+{# join / leave button for one camp; needs: c (camp), donor, mine (signup or None) #}
+{% if donor %}
+  {% if mine and mine.status in ('Signed up', 'Waitlist') %}
+    <form method="post" action="{{ url_for('community.leave_camp', camp_id=c.id) }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-secondary" type="submit">{{ 'Leave the waiting list' if mine.status == 'Waitlist' else 'Cancel my place' }}</button></form>
+    {% if mine.status == 'Signed up' %}<a class="btn btn-outline-navy" href="{{ url_for('trust.donor_camp_checkin', signup_id=mine.id) }}"><i class="fa-solid fa-qrcode me-1" aria-hidden="true"></i>Check-in QR</a>{% endif %}
+  {% elif mine %}<span class="badge bg-success">{{ mine.status }}</span>
+    {% if mine.status == 'Attended' %}<a class="btn btn-sm btn-outline-navy" href="{{ url_for('trust.donor_camp_checkin', signup_id=mine.id) }}"><i class="fa-solid fa-qrcode me-1" aria-hidden="true"></i>Check-in QR</a>{% endif %}
+  {% else %}
+    <form method="post" action="{{ url_for('community.join_camp', camp_id=c.id) }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-blood" type="submit">{{ 'Sign up' if c.spots_left > 0 else 'Join the waiting list' }}</button></form>
+  {% endif %}
+{% elif not current_user %}<a class="btn btn-blood" href="{{ url_for('auth.login') }}">Log in to sign up</a>{% endif %}

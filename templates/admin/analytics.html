@@ -1,0 +1,93 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'analytics' %}
+{% block title %}Reports and analytics{% endblock %}
+{% block dash_title %}Reports and analytics{% endblock %}
+{% block dash_subtitle %}How donors, requests and donations are distributed across BloodLink{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Fulfilled requests</div><div class="display-6 fw-bold">{{ fulfil.fulfilled }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Average time to fulfil</div><div class="display-6 fw-bold">{{ fulfil.average_hours if fulfil.average_hours is not none else '-' }}<span class="fs-6"> h</span></div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Offers that became donations</div><div class="display-6 fw-bold">{{ (responses.completion_rate ~ '%') if responses.completion_rate is not none else '-' }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Escalated requests</div><div class="display-6 fw-bold">{{ escalation.escalated }}</div><div class="small text-muted">{{ escalation.level_2 }} reached level 2</div></div></div>
+</div>
+<div class="panel">
+  <div class="d-flex flex-wrap justify-content-between gap-2"><h2 class="h5">Demand and supply by blood group</h2>
+    <div class="d-flex gap-2"><a class="btn btn-sm btn-outline-navy" href="{{ url_for('community.admin_supply_csv') }}">Download CSV</a>
+    <a class="btn btn-sm btn-outline-navy" href="{{ url_for('community.admin_requests_csv') }}">Requests CSV</a></div></div>
+  <div class="table-responsive"><table class="table align-middle"><caption class="visually-hidden">Units still needed versus donors available, by blood group</caption>
+    <thead><tr><th scope="col">Group</th><th scope="col">Units still needed</th><th scope="col">Available donors</th></tr></thead>
+    <tbody>{% for r in demand_supply %}<tr><th scope="row">{{ r.group }}</th><td>{{ r.units_needed }}{% if r.units_needed and r.donors_available < r.units_needed %} <span class="badge bg-danger">short</span>{% endif %}</td><td>{{ r.donors_available }}</td></tr>{% endfor %}</tbody></table></div>
+  <h2 class="h6 mt-3">By city</h2>
+  <div class="table-responsive"><table class="table table-sm"><thead><tr><th scope="col">City</th><th scope="col">Units still needed</th><th scope="col">Available donors</th></tr></thead>
+    <tbody>{% for r in city_ds %}<tr><td>{{ r.city }}</td><td>{{ r.units_needed }}</td><td>{{ r.donors_available }}</td></tr>{% else %}<tr><td colspan="3" class="text-muted">No data yet.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div class="panel">
+  <h2 class="h5">Donors and requests by blood group</h2>
+  <canvas id="groupChart" height="130" role="img" aria-label="Chart: see the same figures in the tables on this page and the admin lists"></canvas>
+</div>
+
+<div class="panel">
+  <h2 class="h5">Requests by status</h2>
+  <canvas id="statusChart" height="130" role="img" aria-label="Chart: see the same figures in the tables on this page and the admin lists"></canvas>
+</div>
+
+<div class="panel">
+  <h2 class="h5">Requests by city</h2>
+  {% if requests_by_city %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>City or location</th><th>Requests</th></tr></thead>
+      <tbody>{% for city, count in requests_by_city.items() %}<tr><td>{{ city }}</td><td>{{ count }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% else %}<p class="text-muted mb-0">No requests recorded yet.</p>{% endif %}
+</div>
+
+<div class="panel">
+  <h2 class="h5">Completed donations by month</h2>
+  {% if monthly_donations %}
+  <canvas id="monthlyChart" height="130" role="img" aria-label="Chart: see the same figures in the tables on this page and the admin lists"></canvas>
+  {% else %}<p class="text-muted mb-0">No donations have been marked complete yet.</p>{% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+  new Chart(document.getElementById("groupChart"), {
+    type: "bar",
+    data: {
+      labels: {{ donors_by_group.keys()|list|tojson }},
+      datasets: [
+        { label: "Donors", data: {{ donors_by_group.values()|list|tojson }}, backgroundColor: "#c1121f" },
+        { label: "Requests", data: {{ requests_by_group.values()|list|tojson }}, backgroundColor: "#14213d" }
+      ]
+    },
+    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+
+  new Chart(document.getElementById("statusChart"), {
+    type: "doughnut",
+    data: {
+      labels: {{ status_counts.keys()|list|tojson }},
+      datasets: [{
+        data: {{ status_counts.values()|list|tojson }},
+        backgroundColor: ["#e07a0c", "#14213d", "#8d99ae", "#178a4c", "#343a40"]
+      }]
+    }
+  });
+
+  {% if monthly_donations %}
+  new Chart(document.getElementById("monthlyChart"), {
+    type: "line",
+    data: {
+      labels: {{ monthly_donations.keys()|list|tojson }},
+      datasets: [{ label: "Completed donations", data: {{ monthly_donations.values()|list|tojson }},
+                   borderColor: "#c1121f", backgroundColor: "rgba(193,18,31,.12)", fill: true, tension: .3 }]
+    },
+    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+  {% endif %}
+</script>
+{% endblock %}

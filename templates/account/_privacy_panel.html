@@ -1,0 +1,37 @@
+{# Shown at the bottom of every donor / patient / hospital profile. #}
+{% macro panel(role) %}
+<div class="panel" id="privacy">
+  <h2 class="h5">Your data and privacy</h2>
+  <p class="text-muted">You control your data. See the <a href="{{ url_for('legal.privacy_policy') }}">privacy policy</a>.</p>
+  {% if role == 'donor' %}
+  <form method="post" action="{{ url_for('account.preferences') }}" class="mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-check mb-2">
+      <input class="form-check-input" type="checkbox" id="share_contact_consent" name="share_contact_consent" {{ 'checked' if current_user.share_contact_consent }}>
+      <label class="form-check-label" for="share_contact_consent">Show my phone and email to logged-in patients and hospitals who search the donor list.</label>
+    </div>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="email_opt_in" name="email_opt_in" {{ 'checked' if current_user.email_opt_in }}>
+      <label class="form-check-label" for="email_opt_in">Email me about matching requests (each email has an unsubscribe link).</label>
+    </div>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="sms_opt_in" name="sms_opt_in" {{ 'checked' if current_user.sms_opt_in }}>
+      <label class="form-check-label" for="sms_opt_in">Text me (SMS) about critical requests and appointment reminders, at the phone number on my profile.</label>
+    </div>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="whatsapp_opt_in" name="whatsapp_opt_in" {{ 'checked' if current_user.whatsapp_opt_in }}>
+      <label class="form-check-label" for="whatsapp_opt_in">Message me on WhatsApp about critical requests and appointment reminders, at the phone number on my profile.</label>
+    </div>
+    <button class="btn btn-outline-navy" type="submit">Save privacy choices</button>
+  </form>
+  {% endif %}
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-navy" href="{{ url_for('account.export') }}"><i class="fa-solid fa-download" aria-hidden="true"></i> Download my data</a>
+    {% if role == 'hospital' %}
+    <a class="btn btn-outline-danger" href="{{ url_for('legal.data_request', kind='delete') }}">Request account closure</a>
+    {% else %}
+    <a class="btn btn-outline-danger" href="{{ url_for('account.delete') }}"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete my account</a>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}

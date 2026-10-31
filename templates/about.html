@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="row gy-4">
+      <div class="col-lg-7">
+        <h1>About BloodLink</h1>
+        <p class="lead">BloodLink is an emergency blood donation network that links four groups of people: patients who need blood, hospitals that can confirm the need is real, volunteer donors, and the administrators who keep the platform trustworthy.</p>
+        <p>In an emergency, families lose hours calling around for a matching donor. BloodLink gives that search a structure: the patient posts what is needed, the hospital reviews it, and the system lists registered donors whose blood group is compatible and who are marked available, nearest first. The hospital then coordinates the donors and confirms each donation, so a request for several units is tracked until every unit is confirmed.</p>
+        <h2 class="h4 mt-4">Why hospital verification matters</h2>
+        <p>Open donor directories fill up with fake or duplicated requests. In BloodLink a request stays private until the named hospital approves it, so donors only ever see needs a medical institution has confirmed.</p>
+        <h2 class="h4 mt-4">Built as a university project</h2>
+        <p>BloodLink is a university project built with Python Flask, SQLAlchemy and a Bootstrap 5 front end. It uses SQLite for development and can use PostgreSQL in production, serves all fonts and scripts itself (no trackers or ad services), and stores accounts, requests and responses in a real database. It is not a medical service and makes no clinical decisions.</p>
+      </div>
+      <div class="col-lg-5">
+        <div class="panel">
+          <h2 class="h5">What each role can do</h2>
+          <ul class="mb-0">
+            <li class="mb-2"><strong>Donor</strong> &mdash; keep a profile, switch availability on and off, see matching requests, and respond with "I can donate".</li>
+            <li class="mb-2"><strong>Patient</strong> &mdash; post a blood request, track its status, and see which donors responded.</li>
+            <li class="mb-2"><strong>Hospital</strong> &mdash; review requests made against it, approve or reject them, coordinate donors, record who attended, confirm each collected unit, and close requests with a reason.</li>
+            <li><strong>Admin</strong> &mdash; manage every account, monitor requests, and read platform analytics.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h2 class="h5">Blood compatibility</h2>
+          <p class="mb-0 small">The matching list uses standard red-cell ABO/Rh compatibility. For example O&minus; can give to every group and a B+ request can be met by B+, B&minus;, O+ or O&minus; donors. It is a shortlist only: a hospital must screen, test and crossmatch before any transfusion.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'camps' %}
+{% block title %}Camp roster{% endblock %}
+{% block dash_title %}Roster: {{ camp.title }}{% endblock %}
+{% block dash_subtitle %}{{ camp.starts_at.strftime('%d %b %Y, %H:%M') }} &middot; {{ camp.venue }}, {{ camp.city }}{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+{% block dash_content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Signed up</div><div class="display-6 fw-bold">{{ stats.signed }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Arrived</div><div class="display-6 fw-bold">{{ stats.attended }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Donated</div><div class="display-6 fw-bold">{{ stats.donated }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="panel h-100"><div class="small text-muted">Units recorded</div><div class="display-6 fw-bold">{{ stats.units }}</div></div></div>
+</div>
+<div class="panel">
+  <p class="small text-muted">The roster opens 2 hours before the camp. A donation counts only when you record it here; the donor then gets a certificate, the rest period starts, and <strong>the units are added to your blood stock automatically</strong>. Donors can show a QR code that you scan on the <a href="{{ url_for('trust.checkin_scan') }}">Donor check-in</a> page.</p>
+  <div class="table-responsive"><table class="table align-middle">
+    <caption class="visually-hidden">People signed up for this camp</caption>
+    <thead><tr><th scope="col">Donor</th><th scope="col">Group</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+    <tbody>{% for s in rows %}<tr>
+      <th scope="row">{{ s.donor.name }}{% if s.donor.share_contact_consent %}<div class="small text-muted fw-normal">{{ s.donor.phone }}</div>{% endif %}</th>
+      <td>{{ s.donor.blood_group }}</td>
+      <td><span class="badge bg-{{ {'Signed up':'secondary','Attended':'info','Donated':'success','Waitlist':'light text-dark border','No-show':'danger'}[s.status] }}">{{ s.status }}</span>{% if s.status == 'Donated' %} {{ s.units }} unit{{ 's' if s.units != 1 }}{% endif %}</td>
+      <td>{% if s.status in ('Signed up', 'Attended') %}
+        <form method="post" action="{{ url_for('community.record_camp', signup_id=s.id) }}" class="d-flex flex-wrap gap-1 align-items-center"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% if s.status == 'Signed up' %}<button class="btn btn-sm btn-outline-navy" name="action" value="attended" type="submit">Arrived</button>{% endif %}
+          <label class="visually-hidden" for="u{{ s.id }}">Units</label><input class="form-control form-control-sm" id="u{{ s.id }}" name="units" value="1" style="width: 4rem;" inputmode="numeric" max="{{ max_units }}">
+          <button class="btn btn-sm btn-blood" name="action" value="donated" type="submit">Record donation</button>
+          {% if s.status == 'Signed up' %}<button class="btn btn-sm btn-outline-secondary" name="action" value="no_show" type="submit">No-show</button>{% endif %}
+        </form>{% endif %}
+        {% if s.status != 'Waitlist' %}<a class="btn btn-sm btn-link" href="{{ url_for('health.screening_signup', signup_id=s.id) }}">{{ 'Edit health check' if s.screening_report else 'Health check' }}</a>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="4" class="text-muted">Nobody has signed up yet.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endblock %}

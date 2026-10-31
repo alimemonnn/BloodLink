@@ -1,0 +1,49 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'health' %}
+{% block title %}My health and donations{% endblock %}
+{% block dash_title %}My health and donations{% endblock %}
+{% block dash_subtitle %}Whether you can donate, why, and what hospitals have written for you{% endblock %}
+{% block sidenav %}{% include "donor/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel mb-3 elig elig-{{ eligibility.state }}">
+  <h2 class="h5 mb-2">
+    {% if eligibility.state == 'eligible' %}<i class="fa-solid fa-circle-check text-success me-1" aria-hidden="true"></i> You can donate now
+    {% elif eligibility.state == 'resting' %}<i class="fa-solid fa-hourglass-half text-warning me-1" aria-hidden="true"></i> You can donate again in {{ eligibility.days }} day{{ 's' if eligibility.days != 1 }}
+    {% elif eligibility.state == 'deferred' %}<i class="fa-solid fa-circle-pause text-warning me-1" aria-hidden="true"></i> A hospital asked you to wait until {{ eligibility.until.strftime('%d %b %Y') }}
+    {% else %}<i class="fa-solid fa-circle-xmark text-danger me-1" aria-hidden="true"></i> A hospital marked you as not eligible{% endif %}
+  </h2>
+  {% if eligibility.state == 'resting' %}<p class="mb-1">Your body needs time between donations. You will be able to donate from {{ eligibility.until.strftime('%d %b %Y') }}.</p>{% endif %}
+  {% if eligibility.reason and eligibility.state != 'resting' %}<p class="mb-1"><strong>Main reason:</strong> {{ eligibility.reason }}</p>{% endif %}
+  {% if eligibility.message %}<p class="mb-1"><strong>Message from the hospital:</strong> {{ eligibility.message }}</p>{% endif %}
+  {% if eligibility.state in ('deferred', 'not_eligible') %}<p class="small text-muted mb-0">Only the hospital decides who may donate. If you have questions, please ask the hospital that screened you.</p>
+  {% else %}<p class="small text-muted mb-0">This is a summary, not medical advice. The hospital always decides on the day.</p>{% endif %}
+</div>
+
+<div class="panel mb-3">
+  <h2 class="h5">Health check reports</h2>
+  {% if reports %}
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <caption class="visually-hidden">Reports written by hospitals</caption>
+    <thead><tr><th scope="col">Date</th><th scope="col">Hospital</th><th scope="col">Outcome</th><th scope="col">Main reason</th><th scope="col"><span class="visually-hidden">Open</span></th></tr></thead>
+    <tbody>{% for r in reports %}<tr>
+      <td>{{ r.created_at.strftime('%d %b %Y') }}</td><td>{{ r.hospital.hospital_name }}</td>
+      <td><span class="badge bg-{{ 'success' if r.fit else 'warning text-dark' if r.outcome == 'Temporarily deferred' else 'danger' }}">{{ r.outcome }}</span></td>
+      <td>{{ r.reason or '-' }}</td>
+      <td class="text-nowrap"><a class="btn btn-sm btn-outline-navy" href="{{ url_for('health.donor_report', report_id=r.id) }}">Read</a>
+        <a class="btn btn-sm btn-outline-navy" href="{{ url_for('health.donor_report_pdf', report_id=r.id) }}">PDF</a></td></tr>{% endfor %}</tbody></table></div>
+  {% else %}<p class="text-muted mb-0">No reports yet. When a hospital screens you and shares the result, it appears here.</p>{% endif %}
+  <p class="small text-muted mt-3 mb-0"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>BloodLink does not carry blood-test results such as infection screening. A hospital shares those with you in person.</p>
+</div>
+
+<div class="panel">
+  <h2 class="h5">My confirmed donations</h2>
+  {% if donations %}
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <caption class="visually-hidden">Donations a hospital confirmed</caption>
+    <thead><tr><th scope="col">Date</th><th scope="col">Where</th><th scope="col">Units</th><th scope="col">What for</th><th scope="col"><span class="visually-hidden">Certificate</span></th></tr></thead>
+    <tbody>{% for d in donations %}<tr><td>{{ d.when.strftime('%d %b %Y') }}</td><td>{{ d.where }}</td><td>{{ d.units }}</td><td>{{ d.kind }}</td>
+      <td><a class="btn btn-sm btn-outline-navy" href="{{ d.certificate }}"><i class="fa-solid fa-certificate me-1" aria-hidden="true"></i>Certificate</a></td></tr>{% endfor %}</tbody></table></div>
+  {% else %}<p class="text-muted mb-0">Nothing confirmed yet. A donation counts only after the hospital confirms it.</p>{% endif %}
+</div>
+{% endblock %}

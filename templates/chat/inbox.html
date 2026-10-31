@@ -1,0 +1,42 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'messages' %}
+{% block title %}Messages{% endblock %}
+{% block dash_title %}Messages{% endblock %}
+{% block dash_subtitle %}Talk to the people coordinating each blood request{% endblock %}
+{% block sidenav %}{% include base_nav %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  {% if threads %}
+  <ul class="chat-list list-unstyled mb-0">
+    {% for t in threads %}
+    {% set r = t.resp %}
+    <li>
+      <a class="chat-row {{ 'is-unread' if t.unread }}" href="{{ url_for('chat.thread', response_id=r.id) }}">
+        <span class="blood-chip sm" aria-hidden="true">{{ r.request.blood_group_required }}</span>
+        <span class="chat-row-main">
+          <span class="chat-row-title">
+            Request #{{ r.request.id }} &middot;
+            {% if role == 'donor' %}{{ r.request.hospital.hospital_name }}
+            {% else %}{{ r.donor.name }}{% endif %}
+            {% if t.unread %}<span class="badge bg-danger ms-1">New</span>{% endif %}
+          </span>
+          <span class="chat-row-preview">
+            {% if t.last %}{{ t.last.body[:90] }}{{ '…' if t.last.body|length > 90 }}{% else %}No messages yet. Say hello.{% endif %}
+          </span>
+        </span>
+        <span class="chat-row-meta">
+          <span class="badge bg-{{ r.status_color }}">{{ r.response_status }}</span>
+          {% if not t.open %}<span class="small text-muted d-block">read-only</span>{% endif %}
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state"><i class="fa-regular fa-comments" aria-hidden="true"></i>
+    <h3>No conversations yet</h3>
+    <p>A conversation opens when a donor offers to help with a request.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

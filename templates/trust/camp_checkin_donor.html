@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}My camp check-in code{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 560px;">
+  <h1>Your camp check-in code</h1>
+  <p class="lead">Show this at the camp desk when you arrive. The hospital scans it, or you read out the short code.</p>
+  <div class="panel text-center">
+    <img src="{{ qr }}" width="260" height="260" alt="Check-in QR code for the camp {{ camp.title }}">
+    <p class="display-6 fw-bold my-2" aria-label="Check-in code">{{ code }}</p>
+    <p class="mb-1"><strong>{{ camp.title }}</strong></p>
+    <p class="mb-1">{{ camp.hospital.hospital_name }} &middot; {{ camp.venue }}, {{ camp.city }}</p>
+    <p class="text-muted">{{ camp.starts_at.strftime('%A %d %b %Y, %H:%M') }} (local time)</p>
+    {% if signup.status in ('Attended', 'Donated') %}<span class="badge bg-success">{{ signup.status }}</span>{% endif %}
+    <p class="small text-muted mb-0">The code works only for your place at this camp. Checking in does not count the donation; the hospital records that after collection.</p>
+  </div>
+  <p class="mt-3"><a href="{{ url_for('community.camp_detail', camp_id=camp.id) }}">Back to the camp</a></p>
+</div></section>
+{% endblock %}

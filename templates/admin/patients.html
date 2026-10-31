@@ -1,0 +1,51 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import pagination %}
+{% set active = 'patients' %}
+{% block title %}Manage patients{% endblock %}
+{% block dash_title %}Patients{% endblock %}
+{% block dash_subtitle %}People and families who post blood requests{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<form class="panel mb-4" method="get">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label" for="name">Name</label>
+      <input class="form-control" id="name" name="name" value="{{ filters.name }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="city">City</label>
+      <input class="form-control" id="city" name="city" value="{{ filters.city }}">
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button class="btn btn-blood w-100" type="submit">Search</button>
+      <a class="btn btn-outline-navy" href="{{ url_for('admin.patients') }}">Reset</a>
+    </div>
+  </div>
+</form>
+
+<div class="panel">
+  {% if patients.items %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Patient</th><th>City</th><th>Contact</th><th>Requests</th><th>Joined</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+      {% for p in patients.items %}
+      <tr>
+        <td><strong>{{ p.name }}</strong><div class="small text-muted">{{ p.email }}</div></td>
+        <td>{{ p.city }}</td>
+        <td class="text-nowrap">{{ p.phone }}</td>
+        <td>{{ p.requests|length }}</td>
+        <td>{{ p.created_at.strftime('%d %b %Y') }}</td>
+        <td><a class="btn btn-sm btn-outline-navy" href="{{ url_for('admin.patient_detail', patient_id=p.id) }}">Open</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pagination(patients, 'admin.patients', filters) }}
+  {% else %}
+  <div class="empty-state"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><p class="mb-0">No patients match this search.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

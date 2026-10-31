@@ -1,0 +1,62 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import pagination %}
+{% set active = 'hospitals' %}
+{% block title %}Manage hospitals{% endblock %}
+{% block dash_title %}Hospitals{% endblock %}
+{% block dash_subtitle %}Verify new hospitals so patients can name them in a request{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<form class="panel mb-4" method="get">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label" for="name">Hospital name</label>
+      <input class="form-control" id="name" name="name" value="{{ filters.name }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="city">City</label>
+      <input class="form-control" id="city" name="city" value="{{ filters.city }}">
+    </div>
+    <div class="col-md-5 d-flex gap-2">
+      <button class="btn btn-blood" type="submit">Search</button>
+      <a class="btn btn-outline-navy" href="{{ url_for('admin.hospitals') }}">Reset</a>
+      <a class="btn btn-outline-navy ms-auto" href="{{ url_for('admin.add_hospital') }}"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add hospital</a>
+    </div>
+  </div>
+</form>
+
+<div class="panel">
+  {% if hospitals.items %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Hospital</th><th>City</th><th>Contact</th><th>Requests</th><th>Verification</th><th>Account</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+      {% for h in hospitals.items %}
+      <tr>
+        <td><strong>{{ h.hospital_name }}</strong><div class="small text-muted">{{ h.email }}</div></td>
+        <td>{{ h.city }}</td>
+        <td class="text-nowrap">{{ h.phone }}</td>
+        <td>{{ h.requests|length }}</td>
+        <td><span class="badge bg-{{ 'success' if h.is_verified else 'warning text-dark' }}">{{ 'Verified' if h.is_verified else 'Awaiting review' }}</span></td>
+        <td><span class="badge bg-{{ 'success' if h.is_active else 'dark' }}">{{ 'Active' if h.is_active else 'Inactive' }}</span></td>
+        <td class="text-nowrap">
+          <a class="btn btn-sm btn-outline-navy" href="{{ url_for('admin.hospital_detail', hospital_id=h.id) }}">Edit</a>
+          <form class="d-inline" method="post" action="{{ url_for('admin.verify_hospital', hospital_id=h.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-{{ 'outline-secondary' if h.is_verified else 'blood' }}" type="submit">
+              {{ 'Unverify' if h.is_verified else 'Verify' }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pagination(hospitals, 'admin.hospitals', filters) }}
+  {% else %}
+  <div class="empty-state"><i class="fa-solid fa-hospital" aria-hidden="true"></i>
+    <p>No hospitals match this search.</p>
+    <a class="btn btn-blood" href="{{ url_for('admin.add_hospital') }}">Add a hospital</a></div>
+  {% endif %}
+</div>
+{% endblock %}

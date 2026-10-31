@@ -1,0 +1,48 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'hospitals' %}
+{% block title %}Add hospital{% endblock %}
+{% block dash_title %}Add a hospital{% endblock %}
+{% block dash_subtitle %}Hospitals added here are verified immediately and can log in straight away{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel">
+  <form method="post" novalidate data-match-passwords>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label" for="hospital_name">Hospital name</label>
+        <input class="form-control" id="hospital_name" name="hospital_name" value="{{ form.get('hospital_name', '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-control" id="email" name="email" type="email" value="{{ form.get('email', '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="phone">Phone</label>
+        <input class="form-control" id="phone" name="phone" value="{{ form.get('phone', '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="city">City</label>
+        <input class="form-control" id="city" name="city" value="{{ form.get('city', '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="address">Address</label>
+        <input class="form-control" id="address" name="address" value="{{ form.get('address', '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-control" id="password" name="password" type="password" required minlength="8">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="confirm_password">Confirm password</label>
+        <input class="form-control" id="confirm_password" name="confirm_password" type="password" required minlength="8">
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button class="btn btn-blood" type="submit">Add hospital</button>
+      <a class="btn btn-outline-navy" href="{{ url_for('admin.hospitals') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

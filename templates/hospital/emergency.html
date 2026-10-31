@@ -1,0 +1,27 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'emergency' %}
+{% block title %}Emergency request{% endblock %}
+{% block dash_title %}Post an emergency request{% endblock %}
+{% block dash_subtitle %}For a patient who is already at your hospital. It goes live at once and matching donors are alerted now.{% endblock %}
+{% block sidenav %}{% include "hospital/_nav.html" %}{% endblock %}
+{% block dash_content %}
+<div class="panel">
+  <div class="alert alert-danger" role="note"><i class="fa-solid fa-truck-medical me-1" aria-hidden="true"></i> Use this for real emergencies only. No review step: your hospital approves it by posting it. Critical requests also alert donors by SMS, WhatsApp and push if they opted in.</div>
+  <form method="post" novalidate class="row g-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-6 col-md-3"><label class="form-label" for="blood_group_required">Blood group</label>
+      <select class="form-select" id="blood_group_required" name="blood_group_required" required><option value="">Choose</option>
+        {% for g in groups %}<option {{ 'selected' if form.get('blood_group_required') == g }}>{{ g }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-3"><label class="form-label" for="units_required">Units needed</label>
+      <input class="form-control" id="units_required" name="units_required" type="number" min="1" max="20" value="{{ form.get('units_required', 2) }}" required></div>
+    <div class="col-6 col-md-3"><label class="form-label" for="urgency">How urgent</label>
+      <select class="form-select" id="urgency" name="urgency"><option value="Critical" {{ 'selected' if form.get('urgency', 'Critical') == 'Critical' }}>Critical</option><option value="Urgent" {{ 'selected' if form.get('urgency') == 'Urgent' }}>Urgent</option></select></div>
+    <div class="col-6 col-md-3"><label class="form-label" for="hours">Needed within</label>
+      <select class="form-select" id="hours" name="hours">{% for h, label in hours.items() %}<option value="{{ h }}" {{ 'selected' if (form.get('hours') or '24')|string == h|string }}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-md-6"><label class="form-label" for="patient_label">Patient label (initials or ward, shown publicly)</label>
+      <input class="form-control" id="patient_label" name="patient_label" maxlength="60" placeholder="e.g. A. K. or Ward 4" value="{{ form.get('patient_label', '') }}"></div>
+    <div class="col-12"><label class="form-label" for="description">What donors should know (optional)</label>
+      <textarea class="form-control" id="description" name="description" rows="2" maxlength="600" placeholder="Where to go, who to ask for">{{ form.get('description', '') }}</textarea></div>
+    <div class="col-12"><button class="btn btn-blood btn-lg" type="submit"><i class="fa-solid fa-bolt me-1" aria-hidden="true"></i>Post emergency request</button></div>
+  </form>
+</div>
+{% endblock %}

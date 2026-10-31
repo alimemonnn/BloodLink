@@ -1,0 +1,66 @@
+{% extends "dashboard_base.html" %}
+{% from "_cnic.html" import verified_badge, status_badge %}
+{% set active = 'cnic' %}
+{% block title %}CNIC review{% endblock %}
+{% block dash_title %}{{ donor.name }} {{ verified_badge(donor) }}{% endblock %}
+{% block dash_subtitle %}Donor since {{ donor.created_at.strftime('%d %b %Y') }} &middot; {{ donor.email }}{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="panel">
+      <h2 class="h5">Identity document {{ status_badge(record) }}</h2>
+      {% if record %}
+        <p class="mb-2"><strong>CNIC number:</strong> {{ record.cnic_number }}<br>
+          <span class="small text-muted">Sent {{ record.submitted_at.strftime('%d %b %Y, %H:%M') }}{% if record.reviewed_at %} &middot; reviewed {{ record.reviewed_at.strftime('%d %b %Y, %H:%M') }}{% endif %}</span></p>
+        {% if record.reject_reason %}<div class="alert alert-danger py-2">Reason given: {{ record.reject_reason }}</div>{% endif %}
+        {% if not record.has_file %}
+          <div class="alert alert-secondary">The donor typed a CNIC number at registration but has not uploaded the image yet. Nothing to review.</div>
+        {% elif record.file_mime == 'application/pdf' %}
+          <p><a class="btn btn-outline-navy" href="{{ url_for('cnic.admin_file', donor_id=donor.id) }}" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf me-1" aria-hidden="true"></i> Open the PDF (opens in a new tab)</a></p>
+        {% else %}
+          <p><a href="{{ url_for('cnic.admin_file', donor_id=donor.id) }}" target="_blank" rel="noopener"><img class="img-fluid border rounded" src="{{ url_for('cnic.admin_file', donor_id=donor.id) }}" alt="CNIC image submitted by {{ donor.name }}"></a></p>
+        {% endif %}
+        <p class="small text-muted">Opening the document is recorded in the activity log. Check that the name and number match this donor.</p>
+        {% if record.has_file %}<div class="d-flex gap-2 flex-wrap align-items-start">
+          {% if not record.is_approved %}
+          <form method="post" action="{{ url_for('cnic.admin_approve', donor_id=donor.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-blood" type="submit"><i class="fa-solid fa-check me-1" aria-hidden="true"></i> Approve and mark as Verified donor</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('cnic.admin_reject', donor_id=donor.id) }}" class="d-flex gap-2 flex-wrap">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="visually-hidden" for="reason">Reason for rejecting</label>
+            <input class="form-control w-auto" id="reason" name="reason" maxlength="255" required placeholder="Reason (the donor will see it)">
+            <button class="btn btn-outline-danger" type="submit">{{ 'Withdraw approval' if record.is_approved else 'Reject' }}</button>
+          </form>
+        </div>{% endif %}
+      {% else %}
+        <p class="mb-0">This donor has not added a CNIC. They can still donate; they just do not show the Verified donor badge.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <h2 class="h5">Donor details</h2>
+      <dl class="row mb-0 small">
+        <dt class="col-5">Name</dt><dd class="col-7">{{ donor.name }}</dd>
+        <dt class="col-5">Email</dt><dd class="col-7">{{ donor.email }}</dd>
+        <dt class="col-5">Phone</dt><dd class="col-7">{{ donor.phone }}</dd>
+        <dt class="col-5">Blood group</dt><dd class="col-7">{{ donor.blood_group }}</dd>
+        <dt class="col-5">City / area</dt><dd class="col-7">{{ donor.city }}{% if donor.area %}, {{ donor.area }}{% endif %}</dd>
+        <dt class="col-5">Availability</dt><dd class="col-7">{{ donor.availability }}</dd>
+        <dt class="col-5">Last donation</dt><dd class="col-7">{{ donor.last_donation_date.strftime('%d %b %Y') if donor.last_donation_date else 'Never' }}</dd>
+        <dt class="col-5">Eligible now</dt><dd class="col-7">{{ 'Yes' if donor.is_eligible else 'No (in ' ~ donor.days_until_eligible ~ ' days)' }}</dd>
+        <dt class="col-5">Account</dt><dd class="col-7">{{ 'Active' if donor.is_active else 'Inactive' }}</dd>
+        <dt class="col-5">Registered</dt><dd class="col-7">{{ donor.created_at.strftime('%d %b %Y') }}</dd>
+        <dt class="col-5">Last login</dt><dd class="col-7">{{ donor.last_login_at.strftime('%d %b %Y, %H:%M') if donor.last_login_at else '-' }}</dd>
+        <dt class="col-5">Donations completed</dt><dd class="col-7">{{ donor.completed_donations }}</dd>
+      </dl>
+      <a class="btn btn-sm btn-outline-navy mt-3" href="{{ url_for('admin.donor_detail', donor_id=donor.id) }}">Edit donor</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

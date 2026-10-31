@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Donation camps{% endblock %}
+{% block content %}
+<section class="section"><div class="container">
+  <h1>Donation camps</h1>
+  <p class="lead">Upcoming events run by verified hospitals. Sign up to reserve a place; if a camp is full you can join the waiting list.</p>
+  <form method="get" class="d-flex gap-2 mb-3" style="max-width: 420px;"><label class="visually-hidden" for="city">City</label>
+    <input class="form-control" id="city" name="city" value="{{ city }}" placeholder="Filter by city"><button class="btn btn-outline-navy" type="submit">Filter</button></form>
+  {% for c in camps %}{% set mine_s = mine.get(c.id) %}
+  <div class="panel mb-3"><div class="d-flex flex-wrap justify-content-between gap-2">
+    <div><h2 class="h5 mb-1"><a href="{{ url_for('community.camp_detail', camp_id=c.id) }}">{{ c.title }}</a></h2>
+      <div class="text-muted">{{ c.hospital.hospital_name }} &middot; {{ c.venue }}, {{ c.city }}</div>
+      <div><i class="fa-regular fa-calendar me-1" aria-hidden="true"></i>{{ c.starts_at.strftime('%A %d %b, %H:%M') }} to {{ c.ends_at.strftime('%H:%M') }} (local time)</div>
+      {% if c.description %}<p class="mb-1 mt-2">{{ c.description }}</p>{% endif %}
+      <span class="badge bg-{{ 'secondary' if c.spots_left == 0 else 'success' }}">{{ c.spots_left }} of {{ c.capacity }} places left</span>
+      {% if c.waitlist %}<span class="badge bg-light text-dark border">{{ c.waitlist|length }} on the waiting list</span>{% endif %}
+      {% if mine_s and mine_s.status == 'Waitlist' %}<span class="badge bg-warning text-dark">You are number {{ c.waitlist.index(mine_s) + 1 }} on the waiting list</span>{% endif %}</div>
+    <div class="d-flex flex-column gap-2 align-items-end">{% with mine=mine_s %}{% include "community/_camp_action.html" %}{% endwith %}
+      <a class="small" href="{{ url_for('community.camp_detail', camp_id=c.id) }}">Details</a></div>
+  </div></div>
+  {% else %}<div class="empty-state"><p>No upcoming camps{{ ' in ' + city if city }}.</p></div>{% endfor %}
+</div></section>
+{% endblock %}

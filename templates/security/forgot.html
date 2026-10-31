@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Forgot password{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width: 520px;">
+  <h1>Forgot your password?</h1>
+  <p class="lead">Enter the email you registered with and we will send a link to choose a new password.</p>
+  <div class="panel">
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="email">Email</label>
+      <input class="form-control mb-3" id="email" name="email" type="email" autocomplete="email" required>
+      <button class="btn btn-blood" type="submit">Send reset link</button>
+      <a class="btn btn-link" href="{{ url_for('auth.login') }}">Back to log in</a>
+    </form>
+  </div>
+</div></section>
+{% endblock %}

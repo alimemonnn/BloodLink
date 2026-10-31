@@ -1,0 +1,47 @@
+# Render Blueprint for the FREE plan. New + > Blueprint > pick your GitHub repo, then fill in the values marked "sync: false".
+# Step-by-step: docs/DEPLOY.md
+#
+# Free-plan facts (checked 2026-10): the site sleeps after 15 minutes without visitors and wakes in about a minute;
+# the filesystem is wiped on every deploy, so the database MUST be an outside PostgreSQL such as Neon (free, 0.5 GB);
+# free instances cannot run cron jobs or a pre-deploy command, so the jobs run inside the web process instead.
+services:
+  - type: web
+    name: bloodlink
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 1 --threads 4 --timeout 60
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL        # Neon connection string, ends with ?sslmode=require
+        sync: false
+      - key: ADMIN_EMAIL         # first admin login, created automatically on an empty database
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PUBLIC_BASE_URL     # your live address, e.g. https://bloodlink.onrender.com
+        sync: false
+      - key: BUSINESS_EMAIL      # shown in the footer and policies
+        sync: false
+      - key: RUN_JOBS_IN_PROCESS # reminders, escalation and alert delivery every 5 minutes while the site is awake
+        value: "1"
+      - key: LOG_FORMAT
+        value: json
+      # Optional (leave out until you need them): SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM,
+      # REQUIRE_2FA_ROLES, NOTIFY_PROVIDER + TWILIO_*, VAPID_*, ANTHROPIC_API_KEY, REDIS_URL, SENTRY_DSN
+
+# Paid upgrade path (guaranteed reminders even when nobody visits): add a cron service, set
+# RUN_JOBS_IN_PROCESS to "0", and use the Alembic migrations before each deploy.
+#
+#  - type: cron
+#    name: bloodlink-jobs
+#    runtime: python
+#    schedule: "*/5 * * * *"
+#    buildCommand: pip install -r requirements.txt
+#    startCommand: flask --app app jobs
+#    (same envVars as the web service)
+# and on the web service:  preDeployCommand: flask --app app db upgrade   plus   USE_ALEMBIC=1

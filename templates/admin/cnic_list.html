@@ -1,0 +1,46 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import pagination %}
+{% from "_cnic.html" import status_badge %}
+{% set active = 'cnic' %}
+{% block title %}CNIC verification{% endblock %}
+{% block dash_title %}CNIC verification{% endblock %}
+{% block dash_subtitle %}Review donor identity documents. Approved donors get the Verified donor badge.{% endblock %}
+{% block sidenav %}{% include "admin/_nav.html" %}{% endblock %}
+
+{% block dash_content %}
+<div class="panel mb-3">
+  <div class="d-flex gap-2 flex-wrap">
+    {% for s, label in (('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected'), ('all', 'All')) %}
+    <a class="btn btn-sm {{ 'btn-blood' if status == s else 'btn-outline-navy' }}" href="{{ url_for('cnic.admin_list', status=s) }}">{{ label }}{% if s != 'all' %} ({{ counts[s] }}){% endif %}</a>
+    {% endfor %}
+  </div>
+  <p class="small text-muted mt-2 mb-0">{{ without_cnic }} donor{{ '' if without_cnic == 1 else 's' }} have not added a CNIC. They can still donate, without the badge.</p>
+</div>
+
+<div class="panel">
+  {% if items.items %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <caption class="visually-hidden">CNIC submissions</caption>
+      <thead><tr><th scope="col">Donor</th><th scope="col">CNIC number</th><th scope="col">Group</th><th scope="col">City</th><th scope="col">Sent</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+      {% for r in items.items %}
+      <tr>
+        <th scope="row">{{ r.donor.name }}<div class="small text-muted fw-normal">{{ r.donor.email }}</div></th>
+        <td class="text-nowrap">{{ r.cnic_number }}</td>
+        <td><span class="blood-chip sm">{{ r.donor.blood_group }}</span></td>
+        <td>{{ r.donor.city }}</td>
+        <td class="text-nowrap">{{ r.submitted_at.strftime('%d %b %Y') }}</td>
+        <td>{{ status_badge(r) }}</td>
+        <td class="text-nowrap"><a class="btn btn-sm btn-outline-navy" href="{{ url_for('cnic.admin_detail', donor_id=r.donor_id) }}">Review</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pagination(items, 'cnic.admin_list', {'status': status}) }}
+  {% else %}
+  <div class="empty-state"><i class="fa-regular fa-face-smile" aria-hidden="true"></i><p class="mb-0">Nothing here.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

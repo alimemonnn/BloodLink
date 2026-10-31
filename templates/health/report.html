@@ -1,0 +1,19 @@
+{% extends "dashboard_base.html" %}
+{% set active = 'health' %}
+{% block title %}Health check report{% endblock %}
+{% block dash_title %}Health check report{% endblock %}
+{% block dash_subtitle %}{{ report.hospital.hospital_name }} &middot; {{ report.created_at.strftime('%d %B %Y') }}{% endblock %}
+{% block sidenav %}{% include "donor/_nav.html" %}{% endblock %}
+{% block dash_content %}
+<div class="panel">
+  <p><span class="badge bg-{{ 'success' if report.fit else 'warning text-dark' if report.outcome == 'Temporarily deferred' else 'danger' }} fs-6">{{ report.outcome }}</span>
+    {% if report.reason %} &middot; <strong>{{ report.reason }}</strong>{% endif %}
+    {% if report.deferral_until %} &middot; please wait until <strong>{{ report.deferral_until.strftime('%d %b %Y') }}</strong>{% endif %}</p>
+  <table class="table table-sm" style="max-width: 460px;"><caption class="visually-hidden">Measurements taken at screening</caption>
+    <tbody>{% for name, label in labels.items() %}{% if report[name] is not none %}<tr><th scope="row" class="fw-normal">{{ label }}</th><td class="fw-bold">{{ report[name] }}</td></tr>{% endif %}{% endfor %}</tbody></table>
+  {% if report.message_to_donor %}<h2 class="h6">Message from the hospital</h2><p style="white-space: pre-wrap;">{{ report.message_to_donor }}</p>{% endif %}
+  <a class="btn btn-outline-navy" href="{{ url_for('health.donor_report_pdf', report_id=report.id) }}"><i class="fa-solid fa-file-pdf me-1" aria-hidden="true"></i>Download PDF</a>
+  <a class="btn btn-link" href="{{ url_for('health.donor_health') }}">Back</a>
+  <p class="small text-muted mt-3 mb-0">Written by the hospital. It is not a diagnosis. BloodLink does not carry infection test results; ask the hospital in person.</p>
+</div>
+{% endblock %}
