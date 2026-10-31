@@ -517,9 +517,7 @@ html:not(.js) .reveal { opacity: 1; transform: none; }
 .chat-loc-links { margin-top: .25rem; font-weight: 600; }
 .chat-msg.mine a { color: #fff; text-decoration: underline; }
 .chat-body[dir="rtl"], textarea[dir="rtl"] { text-align: right; }
-/* 
-.chat-flag { margin-top: .35rem; padding: .3rem .5rem; border-radius: 8px; background: #fff3cd; color: #664d03; }
-.chat-msg.mine .chat-flag { background: #fff3cd; color: #664d03; } */
+
 .chat-flag {
     margin-top: .35rem;
     padding: .3rem .5rem;

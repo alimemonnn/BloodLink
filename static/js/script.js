@@ -1,11 +1,20 @@
+
 /* BloodLink front-end behaviour */
 (function () {
   "use strict";
-  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Navbar: shrink and gain a shadow once the page scrolls
   var header = document.getElementById("siteHeader");
-  function onScroll() { if (header) header.classList.toggle("is-scrolled", window.scrollY > 12); }
+
+  function onScroll() {
+    if (header) {
+      header.classList.toggle("is-scrolled", window.scrollY > 12);
+    }
+  }
+
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -14,34 +23,56 @@
   // Ask before destructive actions (delete / cancel)
   document.querySelectorAll("form[data-confirm]").forEach(function (form) {
     form.addEventListener("submit", function (event) {
-      if (!window.confirm(form.getAttribute("data-confirm"))) { event.preventDefault(); }
+      if (!window.confirm(form.getAttribute("data-confirm"))) {
+        event.preventDefault();
+      }
     });
   });
 
-  // After a form is sent, show that it is working and stop a second click (a double post)
+  // After a form is sent, show that it is working and stop a second click
+  // This helps prevent accidental duplicate form submissions.
   document.addEventListener("submit", function (event) {
     var form = event.target;
-    if (!form || !form.tagName || form.method.toLowerCase() !== "post" || form.hasAttribute("data-no-lock")) return;
-    var button = event.submitter;
-  //   window.setTimeout(function () {                     // after the browser has read the form values
-  //     if (event.defaultPrevented || !button || button.classList.contains("btn-link-footer")) return;
-  //     button.classList.add("is-busy");
-  //     button.setAttribute("aria-busy", "true");
-  //     form.querySelectorAll("button[type=submit]:not(.is-busy)").forEach(function (b) { b.disabled = true; });
-  //   }, 0);
-  // });
 
-  window.requestAnimationFrame(function () {
-    if (event.defaultPrevented || !button || button.classList.contains("btn-link-footer")) return;
-    button.classList.add("is-busy");
-    button.setAttribute("aria-busy", "true");
-    form.querySelectorAll("button[type=submit]:not(.is-busy)").forEach(function (b) {
+    if (
+      !form ||
+      !form.tagName ||
+      form.method.toLowerCase() !== "post" ||
+      form.hasAttribute("data-no-lock")
+    ) {
+      return;
+    }
+
+    var button = event.submitter;
+
+    window.requestAnimationFrame(function () {
+      if (
+        event.defaultPrevented ||
+        !button ||
+        button.classList.contains("btn-link-footer")
+      ) {
+        return;
+      }
+
+      button.classList.add("is-busy");
+      button.setAttribute("aria-busy", "true");
+
+      form.querySelectorAll("button[type=submit]:not(.is-busy)").forEach(function (b) {
         b.disabled = true;
+      });
     });
-});
-  window.addEventListener("pageshow", function () {     // back button: make the buttons work again
-    document.querySelectorAll(".is-busy").forEach(function (b) { b.classList.remove("is-busy"); b.removeAttribute("aria-busy"); });
-    document.querySelectorAll("button[type=submit]:disabled").forEach(function (b) { b.disabled = false; });
+  });
+
+  // Back button: make the buttons work again
+  window.addEventListener("pageshow", function () {
+    document.querySelectorAll(".is-busy").forEach(function (b) {
+      b.classList.remove("is-busy");
+      b.removeAttribute("aria-busy");
+    });
+
+    document.querySelectorAll("button[type=submit]:disabled").forEach(function (b) {
+      b.disabled = false;
+    });
   });
 
   // Password and confirmation must match before submitting
@@ -49,6 +80,7 @@
     form.addEventListener("submit", function (event) {
       var pwd = form.querySelector("[name='password'], [name='new_password']");
       var confirmField = form.querySelector("[name='confirm_password']");
+
       if (pwd && confirmField && pwd.value !== confirmField.value) {
         event.preventDefault();
         confirmField.classList.add("is-invalid");
@@ -60,40 +92,64 @@
   // Show / hide password
   document.querySelectorAll("[data-toggle-password]").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      var input = document.querySelector(btn.getAttribute("data-toggle-password"));
+      var input = document.querySelector(
+        btn.getAttribute("data-toggle-password")
+      );
+
       if (!input) return;
+
       var show = input.type === "password";
       input.type = show ? "text" : "password";
-      btn.querySelector("i").className = show ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
-      btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+
+      var icon = btn.querySelector("i");
+
+      if (icon) {
+        icon.className = show
+          ? "fa-regular fa-eye-slash"
+          : "fa-regular fa-eye";
+      }
+
+      btn.setAttribute(
+        "aria-label",
+        show ? "Hide password" : "Show password"
+      );
     });
   });
 
   // A last donation date in the future is never valid
   var today = new Date().toISOString().split("T")[0];
+
   document.querySelectorAll("input[name='last_donation_date']").forEach(function (input) {
     input.setAttribute("max", today);
   });
 
   // Reveal-on-scroll
   var reveals = document.querySelectorAll(".reveal");
+
   if ("IntersectionObserver" in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
+
         entry.target.classList.add("is-visible");
         io.unobserve(entry.target);
       });
     }, { threshold: 0.15 });
-    reveals.forEach(function (el) { io.observe(el); });
+
+    reveals.forEach(function (el) {
+      io.observe(el);
+    });
   } else {
-    reveals.forEach(function (el) { el.classList.add("is-visible"); });
+    reveals.forEach(function (el) {
+      el.classList.add("is-visible");
+    });
   }
 
   // Blood group tiles: light follows the cursor
   document.querySelectorAll(".type-tile").forEach(function (tile) {
     tile.addEventListener("pointermove", function (e) {
       var r = tile.getBoundingClientRect();
+
       tile.style.setProperty("--mx", (e.clientX - r.left) + "px");
       tile.style.setProperty("--my", (e.clientY - r.top) + "px");
     });
@@ -101,22 +157,38 @@
 
   // Home page: "who can give to whom" explainer
   var compat = document.getElementById("compat");
+
   if (compat) {
-    var map = JSON.parse(compat.getAttribute("data-map"));   // donor group -> groups it can give to
+    var map = JSON.parse(compat.getAttribute("data-map"));
     var link = compat.querySelector("[data-out='link']");
+
     function select(need) {
-      compat.querySelectorAll(".pill").forEach(function (p) { p.classList.toggle("on", p.dataset.need === need); });
-      compat.querySelectorAll("[data-out='need']").forEach(function (n) { n.textContent = need; });
+      compat.querySelectorAll(".pill").forEach(function (p) {
+        p.classList.toggle("on", p.dataset.need === need);
+      });
+
+      compat.querySelectorAll("[data-out='need']").forEach(function (n) {
+        n.textContent = need;
+      });
+
       compat.querySelectorAll(".giver").forEach(function (g) {
         var ok = (map[g.dataset.give] || []).indexOf(need) !== -1;
+
         g.classList.toggle("yes", ok);
         g.classList.toggle("exact", ok && g.dataset.give === need);
       });
-      link.href = link.dataset.base + "?blood_group=" + encodeURIComponent(need);
+
+      if (link) {
+        link.href = link.dataset.base + "?blood_group=" + encodeURIComponent(need);
+      }
     }
+
     compat.querySelectorAll(".pill").forEach(function (p) {
-      p.addEventListener("click", function () { select(p.dataset.need); });
+      p.addEventListener("click", function () {
+        select(p.dataset.need);
+      });
     });
+
     select("A+");
   }
 })();
