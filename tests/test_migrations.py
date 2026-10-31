@@ -53,7 +53,8 @@ def test_an_existing_database_can_be_adopted_with_stamp(tmp_path):
         stamp(directory="migrations", revision="head")
         upgrade(directory="migrations")                          # nothing left to do, and no error
         ver = sqlite3.connect(tmp_path / "old.db").execute("select version_num from alembic_version").fetchone()[0]
-        assert ver == "0002_health_camps"
+        # assert ver == "0002_health_camps"
+        assert ver == "0003_donor_cnic"
         db.session.remove(); db.engine.dispose()
 
 
