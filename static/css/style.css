@@ -517,9 +517,23 @@ html:not(.js) .reveal { opacity: 1; transform: none; }
 .chat-loc-links { margin-top: .25rem; font-weight: 600; }
 .chat-msg.mine a { color: #fff; text-decoration: underline; }
 .chat-body[dir="rtl"], textarea[dir="rtl"] { text-align: right; }
-
+/* 
 .chat-flag { margin-top: .35rem; padding: .3rem .5rem; border-radius: 8px; background: #fff3cd; color: #664d03; }
-.chat-msg.mine .chat-flag { background: #fff3cd; color: #664d03; }
+.chat-msg.mine .chat-flag { background: #fff3cd; color: #664d03; } */
+.chat-flag {
+    margin-top: .35rem;
+    padding: .3rem .5rem;
+    border-radius: 8px;
+    background: var(--canvas);
+    color: var(--text);
+    border: 1px solid var(--line);
+}
+
+.chat-msg.mine .chat-flag {
+    background: var(--canvas);
+    color: var(--text);
+    border-color: var(--line);
+}
 .chat-translate button { color: var(--red); }
 .chat-msg.mine .chat-translate button, .chat-msg.mine .chat-translate .text-muted { color: #f1d9df !important; }
 .chat-translated { margin-top: .3rem; padding: .35rem .55rem; border-radius: 8px; background: rgba(0,0,0,.06); }
