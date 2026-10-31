@@ -23,13 +23,22 @@
     var form = event.target;
     if (!form || !form.tagName || form.method.toLowerCase() !== "post" || form.hasAttribute("data-no-lock")) return;
     var button = event.submitter;
-    window.setTimeout(function () {                     // after the browser has read the form values
-      if (event.defaultPrevented || !button || button.classList.contains("btn-link-footer")) return;
-      button.classList.add("is-busy");
-      button.setAttribute("aria-busy", "true");
-      form.querySelectorAll("button[type=submit]:not(.is-busy)").forEach(function (b) { b.disabled = true; });
-    }, 0);
-  });
+  //   window.setTimeout(function () {                     // after the browser has read the form values
+  //     if (event.defaultPrevented || !button || button.classList.contains("btn-link-footer")) return;
+  //     button.classList.add("is-busy");
+  //     button.setAttribute("aria-busy", "true");
+  //     form.querySelectorAll("button[type=submit]:not(.is-busy)").forEach(function (b) { b.disabled = true; });
+  //   }, 0);
+  // });
+
+  window.requestAnimationFrame(function () {
+    if (event.defaultPrevented || !button || button.classList.contains("btn-link-footer")) return;
+    button.classList.add("is-busy");
+    button.setAttribute("aria-busy", "true");
+    form.querySelectorAll("button[type=submit]:not(.is-busy)").forEach(function (b) {
+        b.disabled = true;
+    });
+});
   window.addEventListener("pageshow", function () {     // back button: make the buttons work again
     document.querySelectorAll(".is-busy").forEach(function (b) { b.classList.remove("is-busy"); b.removeAttribute("aria-busy"); });
     document.querySelectorAll("button[type=submit]:disabled").forEach(function (b) { b.disabled = false; });
